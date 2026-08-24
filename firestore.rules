@@ -1,0 +1,116 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // Perfil do usuario (usado na tela de perfil)
+    match /users/{uid} {
+      allow read, write: if isOwner(uid);
+
+      // Dados de perfil — admin escreve via SDK admin, dono lê e escreve seu proprio
+      match /profile/{profileId} {
+        allow read, write: if isOwner(uid);
+      }
+
+      // Simulados do aluno
+      match /sessions/{sessionId} {
+        allow read, create, update, delete: if isOwner(uid);
+      }
+
+      // Flashcards do aluno (revisao espacada)
+      match /flashcards/{cardId} {
+        allow read, create, update, delete: if isOwner(uid);
+      }
+
+      // Caderno de erros (questoes erradas para revisao)
+      match /errorNotebook/{questionId} {
+        allow read, create, update, delete: if isOwner(uid);
+      }
+
+      // Metadados do aluno (stats agregadas, configuracoes, etc.)
+      match /meta/{docId} {
+        allow read, create, update, delete: if isOwner(uid);
+      }
+
+      // Questao do dia
+      match /dailyQuestions/{dateKey} {
+        allow read, create, update, delete: if isOwner(uid);
+      }
+    }
+
+    // Assinatura/acesso
+    match /entitlements/{uid} {
+      allow read: if isOwner(uid);
+      allow write: if false;
+    }
+
+    // Bancos de leitura do aluno
+    match /questionsBank/{id} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    match /provas/{id} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    match /temas/{id} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    // Telemetria de atividade (escrita pelo aluno, lida só pelo admin via SDK admin)
+    match /user_activity/{uid} {
+      allow write: if isOwner(uid);
+      allow read: if false;
+    }
+
+    // Reporte de erro pelo aluno
+    match /erros_reportados/{id} {
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid;
+      allow read, update, delete: if false;
+    }
+
+    // ─── Flashcards (novo modulo) ─────────────────────────────────────────
+    // Cards e decks: leitura para logados (o app filtra o que mostrar por
+    // status/isActive/plano). Escrita apenas via admin SDK.
+    match /flashcards/{cardId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    match /flashcardDecks/{deckId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    // Progresso individual do aluno em cada card. ID = {uid}_{flashcardId}
+    // Aluno pode ler/escrever apenas os proprios documentos.
+    match /userFlashcardProgress/{docId} {
+      allow get, write: if isSignedIn()
+        && docId.matches(request.auth.uid + '_.+');
+      // Query da colecao: liberada apenas para os proprios documentos, o que
+      // permite montar o Deck do Dia com uma query em vez de um getDoc por card.
+      allow list: if isSignedIn()
+        && resource.data.userId == request.auth.uid;
+    }
+
+    // Configuracoes/stats de flashcards do aluno. ID = uid.
+    match /userFlashcardSettings/{uid} {
+      allow read, write: if isOwner(uid);
+    }
+
+    // Fallback: nega tudo que nao foi explicitamente permitido
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

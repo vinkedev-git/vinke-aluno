@@ -1,0 +1,76 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // Perfil do usuario (usado na tela de perfil)
+    match /users/{uid} {
+      allow read, write: if isOwner(uid);
+
+      // Simulados do aluno
+      match /sessions/{sessionId} {
+        allow read, create, update, delete: if isOwner(uid);
+      }
+
+      // Flashcards do aluno (revisao espacada)
+      match /flashcards/{cardId} {
+        allow read, create, update, delete: if isOwner(uid);
+      }
+
+      // Caderno de erros (questoes erradas para revisao)
+      match /errorNotebook/{questionId} {
+        allow read, create, update, delete: if isOwner(uid);
+      }
+
+      // Metadados do aluno (stats agregadas, configuracoes, etc.)
+      match /meta/{docId} {
+        allow read, create, update, delete: if isOwner(uid);
+      }
+
+      // Questao do dia
+      match /dailyQuestions/{dateKey} {
+        allow read, create, update, delete: if isOwner(uid);
+      }
+    }
+
+    // Assinatura/acesso
+    match /entitlements/{uid} {
+      allow read: if isOwner(uid);
+      allow write: if false;
+    }
+
+    // Bancos de leitura do aluno
+    match /questionsBank/{id} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    match /provas/{id} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    match /temas/{id} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    // Reporte de erro pelo aluno
+    match /erros_reportados/{id} {
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid;
+      allow read, update, delete: if false;
+    }
+
+    // Fallback: nega tudo que nao foi explicitamente permitido
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
