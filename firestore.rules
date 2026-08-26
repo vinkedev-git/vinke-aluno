@@ -66,6 +66,13 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Taxonomia ENEM (areas, disciplinas, assuntos) — leitura para logados,
+    // escrita apenas pelo admin via SDK admin
+    match /taxonomia/{id} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+
     // Telemetria de atividade (escrita pelo aluno, lida só pelo admin via SDK admin)
     match /user_activity/{uid} {
       allow write: if isOwner(uid);
