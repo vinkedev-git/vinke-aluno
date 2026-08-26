@@ -110,9 +110,9 @@ export default function ConfiguracoesClient() {
   if (loading) {
     return (
       <div className="space-y-4">
-        <div className="h-8 w-48 animate-pulse rounded-2xl bg-slate-200 dark:bg-slate-800" />
+        <div className="h-8 w-48 animate-pulse rounded-2xl bg-vinke-line2 dark:bg-vinke-navy-sel" />
         {[...Array(3)].map((_, i) => (
-          <div key={i} className="h-28 animate-pulse rounded-2xl bg-slate-200 dark:bg-slate-800" />
+          <div key={i} className="h-28 animate-pulse rounded-2xl bg-vinke-line2 dark:bg-vinke-navy-sel" />
         ))}
       </div>
     );
@@ -122,23 +122,23 @@ export default function ConfiguracoesClient() {
     <div className="mx-auto max-w-xl space-y-6">
       {/* Header */}
       <div>
-        <div className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-500">Configurações</div>
-        <div className="mt-0.5 text-3xl font-black text-slate-900 dark:text-slate-100">Metas diárias</div>
-        <div className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+        <div className="text-xs font-bold uppercase tracking-widest text-vinke-ink3 dark:text-vinke-ink3">Configurações</div>
+        <div className="mt-0.5 text-3xl font-black text-vinke-ink dark:text-slate-100">Metas diárias</div>
+        <div className="mt-1 text-sm text-vinke-ink3 dark:text-vinke-ink4">
           Defina quantas questões e flashcards quer resolver por dia para acompanhar seu progresso.
         </div>
       </div>
 
       {/* Metas numéricas */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800/80 dark:bg-slate-900/50">
-        <div className="mb-4 flex items-center gap-2 text-sm font-black text-slate-900 dark:text-slate-100">
-          <Target size={16} className="text-indigo-500" /> Metas por dia
+      <div className="rounded-2xl border border-vinke-line bg-white p-5 dark:border-vinke-navy-line dark:bg-vinke-navy-card">
+        <div className="mb-4 flex items-center gap-2 text-sm font-black text-vinke-ink dark:text-slate-100">
+          <Target size={16} className="text-vinke" /> Metas por dia
         </div>
         <div className="space-y-4">
           {/* Questões */}
           <GoalRow
             label="Questões"
-            icon={<Zap size={14} className="text-indigo-500" />}
+            icon={<Zap size={14} className="text-vinke" />}
             hint="Questões respondidas nos simulados"
             value={form.dailyQuestionsGoal}
             min={1} max={100}
@@ -147,7 +147,7 @@ export default function ConfiguracoesClient() {
           {/* Flashcards */}
           <GoalRow
             label="Flashcards"
-            icon={<Zap size={14} className="text-blue-500" />}
+            icon={<Zap size={14} className="text-vinke" />}
             hint="Cards revisados na sessão de flashcards"
             value={form.dailyFlashcardsGoal}
             min={1} max={50}
@@ -156,7 +156,7 @@ export default function ConfiguracoesClient() {
           {/* Minutos */}
           <GoalRow
             label="Minutos de estudo"
-            icon={<Clock size={14} className="text-emerald-500" />}
+            icon={<Clock size={14} className="text-vinke-green" />}
             hint="Tempo estimado (calculado automaticamente)"
             value={form.dailyMinutesGoal}
             min={5} max={180}
@@ -166,9 +166,9 @@ export default function ConfiguracoesClient() {
       </div>
 
       {/* Dias de estudo */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800/80 dark:bg-slate-900/50">
-        <div className="mb-4 flex items-center gap-2 text-sm font-black text-slate-900 dark:text-slate-100">
-          <Settings2 size={16} className="text-indigo-500" /> Dias de estudo
+      <div className="rounded-2xl border border-vinke-line bg-white p-5 dark:border-vinke-navy-line dark:bg-vinke-navy-card">
+        <div className="mb-4 flex items-center gap-2 text-sm font-black text-vinke-ink dark:text-slate-100">
+          <Settings2 size={16} className="text-vinke" /> Dias de estudo
         </div>
         <div className="flex flex-wrap gap-2">
           {DAYS.map(({ key, label }) => {
@@ -181,8 +181,8 @@ export default function ConfiguracoesClient() {
                 className={cn(
                   "h-10 w-12 rounded-2xl border text-sm font-bold transition",
                   active
-                    ? "border-slate-900 bg-slate-900 text-white dark:border-blue-500 dark:bg-blue-500"
-                    : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+                    ? "border-vinke bg-vinke text-white"
+                    : "border-vinke-line bg-white text-vinke-ink2 hover:border-vinke-ink4 hover:bg-vinke-offwhite dark:border-vinke-navy-line dark:bg-vinke-navy-card dark:text-slate-300 dark:hover:bg-vinke-navy-sel"
                 )}
               >
                 {label}
@@ -190,7 +190,7 @@ export default function ConfiguracoesClient() {
             );
           })}
         </div>
-        <div className="mt-2 text-xs text-slate-400 dark:text-slate-500">
+        <div className="mt-2 text-xs text-vinke-ink4 dark:text-vinke-ink3">
           {form.studyDays.length === 0
             ? "Nenhum dia selecionado."
             : `${form.studyDays.length} dia${form.studyDays.length > 1 ? "s" : ""} por semana.`}
@@ -198,13 +198,13 @@ export default function ConfiguracoesClient() {
       </div>
 
       {/* Prova alvo */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800/80 dark:bg-slate-900/50">
-        <div className="mb-4 flex items-center gap-2 text-sm font-black text-slate-900 dark:text-slate-100">
-          <Target size={16} className="text-amber-500" /> Prova alvo <span className="text-xs font-normal text-slate-400">(opcional)</span>
+      <div className="rounded-2xl border border-vinke-line bg-white p-5 dark:border-vinke-navy-line dark:bg-vinke-navy-card">
+        <div className="mb-4 flex items-center gap-2 text-sm font-black text-vinke-ink dark:text-slate-100">
+          <Target size={16} className="text-vinke-amber-bar" /> Prova alvo <span className="text-xs font-normal text-vinke-ink4">(opcional)</span>
         </div>
         <div className="space-y-3">
           <div>
-            <label className="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-400">Prova</label>
+            <label className="mb-1 block text-xs font-semibold text-vinke-ink2 dark:text-vinke-ink4">Prova</label>
             <div className="flex flex-wrap gap-2">
               {EXAM_OPTIONS.map((exam) => {
                 const active = form.targetExam === exam;
@@ -216,8 +216,8 @@ export default function ConfiguracoesClient() {
                     className={cn(
                       "rounded-2xl border px-4 py-1.5 text-sm font-semibold transition",
                       active
-                        ? "border-amber-500 bg-amber-500 text-white"
-                        : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
+                        ? "border-vinke bg-vinke text-white"
+                        : "border-vinke-line bg-white text-vinke-ink2 hover:border-vinke-ink4 dark:border-vinke-navy-line dark:bg-vinke-navy-card dark:text-slate-300"
                     )}
                   >
                     {exam}
@@ -228,12 +228,12 @@ export default function ConfiguracoesClient() {
           </div>
           {form.targetExam && (
             <div>
-              <label className="mb-1 block text-xs font-semibold text-slate-600 dark:text-slate-400">Data da prova</label>
+              <label className="mb-1 block text-xs font-semibold text-vinke-ink2 dark:text-vinke-ink4">Data da prova</label>
               <input
                 type="date"
                 value={form.targetExamDate}
                 onChange={(e) => setForm((p) => ({ ...p, targetExamDate: e.target.value }))}
-                className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm text-slate-900 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-200/40 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                className="h-10 w-full rounded-xl border border-vinke-line bg-vinke-offwhite px-3 text-sm text-vinke-ink outline-none transition focus:border-vinke focus:ring-2 focus:ring-blue-200/40 dark:border-vinke-navy-line dark:bg-vinke-navy-sel dark:text-slate-100"
               />
             </div>
           )}
@@ -247,7 +247,7 @@ export default function ConfiguracoesClient() {
           {saving ? "Salvando…" : saved ? "Salvo!" : "Salvar configurações"}
         </Button>
         {saved && (
-          <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+          <span className="text-sm font-semibold text-vinke-green-text dark:text-vinke-green">
             ✓ Configurações salvas
           </span>
         )}
@@ -272,17 +272,17 @@ function GoalRow({
   return (
     <div className="flex items-center gap-4">
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-1.5 text-sm font-semibold text-slate-900 dark:text-slate-100">
+        <div className="flex items-center gap-1.5 text-sm font-semibold text-vinke-ink dark:text-slate-100">
           {icon} {label}
         </div>
-        <div className="text-xs text-slate-500 dark:text-slate-400">{hint}</div>
+        <div className="text-xs text-vinke-ink3 dark:text-vinke-ink4">{hint}</div>
       </div>
       <div className="flex shrink-0 items-center gap-2">
         <button
           type="button"
           onClick={() => onChange(value - 1)}
           disabled={value <= min}
-          className="flex h-8 w-8 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+          className="flex h-8 w-8 items-center justify-center rounded-xl border border-vinke-line text-vinke-ink2 transition hover:bg-vinke-offwhite disabled:opacity-40 dark:border-vinke-navy-line dark:text-slate-300 dark:hover:bg-vinke-navy-sel"
         >
           −
         </button>
@@ -292,13 +292,13 @@ function GoalRow({
           min={min}
           max={max}
           onChange={(e) => onChange(Number(e.target.value))}
-          className="h-8 w-14 rounded-xl border border-slate-200 bg-slate-50 text-center text-sm font-bold text-slate-900 outline-none focus:border-blue-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+          className="h-8 w-14 rounded-xl border border-vinke-line bg-vinke-offwhite text-center text-sm font-bold text-vinke-ink outline-none focus:border-vinke dark:border-vinke-navy-line dark:bg-vinke-navy-sel dark:text-slate-100"
         />
         <button
           type="button"
           onClick={() => onChange(value + 1)}
           disabled={value >= max}
-          className="flex h-8 w-8 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:bg-slate-50 disabled:opacity-40 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+          className="flex h-8 w-8 items-center justify-center rounded-xl border border-vinke-line text-vinke-ink2 transition hover:bg-vinke-offwhite disabled:opacity-40 dark:border-vinke-navy-line dark:text-slate-300 dark:hover:bg-vinke-navy-sel"
         >
           +
         </button>

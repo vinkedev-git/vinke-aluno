@@ -86,10 +86,10 @@ function formatMoneyBRL(v: number): string {
 function statusLabel(params: { ent: Entitlement | null; expired: boolean }) {
   const { ent, expired } = params;
 
-  if (!ent) return { text: "Não encontrada", cls: "bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:border-slate-700" };
+  if (!ent) return { text: "Não encontrada", cls: "bg-vinke-line2 text-vinke-ink2 border-vinke-line dark:bg-vinke-navy-sel dark:text-slate-200 dark:border-vinke-navy-line" };
   if (expired) return { text: "Expirada", cls: "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-300 dark:border-red-900/40" };
-  if (ent.active) return { text: "Ativa", cls: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-900/40" };
-  if (ent.pending) return { text: "Pendente", cls: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-900/40" };
+  if (ent.active) return { text: "Ativa", cls: "bg-vinke-green-soft text-vinke-green-text border-vinke-green-soft dark:bg-emerald-950/30 dark:text-vinke-green dark:border-emerald-900/40" };
+  if (ent.pending) return { text: "Pendente", cls: "bg-vinke-amber-soft text-vinke-amber border-transparent dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-900/40" };
   return { text: "Inativa", cls: "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/30 dark:text-red-300 dark:border-red-900/40" };
 }
 
@@ -180,12 +180,12 @@ export default function AssinaturaClient() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="rounded-3xl border bg-white shadow-sm p-6 dark:border-slate-800 dark:bg-slate-900">
+      <div className="rounded-3xl border bg-white shadow-sm p-6 dark:border-vinke-navy-line dark:bg-vinke-navy-card">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div className="min-w-0">
-            <div className="text-xs text-slate-500 dark:text-slate-400">Área do Aluno</div>
-            <div className="text-2xl font-black text-slate-900 dark:text-slate-100">Assinatura</div>
-            <div className="text-sm text-slate-600 mt-1 dark:text-slate-300">
+            <div className="text-xs text-vinke-ink3 dark:text-vinke-ink4">Área do Aluno</div>
+            <div className="text-2xl font-black text-vinke-ink dark:text-slate-100">Assinatura</div>
+            <div className="text-sm text-vinke-ink2 mt-1 dark:text-slate-300">
               Confira o status do seu plano e a data de vencimento.
             </div>
           </div>
@@ -203,23 +203,23 @@ export default function AssinaturaClient() {
 
       {/* Banner por reason (quando o Guard redirecionar) */}
       {topReasonBanner ? (
-        <div className="rounded-3xl border border-amber-200 bg-amber-50 shadow-sm p-6 dark:border-amber-900/40 dark:bg-amber-950/30">
-          <div className="text-lg font-black text-slate-900 dark:text-slate-100">Atenção</div>
-          <div className="mt-1 text-sm text-slate-700 dark:text-slate-200">{topReasonBanner}</div>
+        <div className="rounded-3xl border border-transparent bg-vinke-amber-soft shadow-sm p-6 dark:border-amber-900/40 dark:bg-amber-950/30">
+          <div className="text-lg font-black text-vinke-ink dark:text-slate-100">Atenção</div>
+          <div className="mt-1 text-sm text-vinke-ink2 dark:text-slate-200">{topReasonBanner}</div>
         </div>
       ) : null}
 
       {/* Content */}
       {loading ? (
-        <div className="rounded-3xl border bg-white shadow-sm p-6 text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">Carregando…</div>
+        <div className="rounded-3xl border bg-white shadow-sm p-6 text-vinke-ink2 dark:border-vinke-navy-line dark:bg-vinke-navy-card dark:text-slate-300">Carregando…</div>
       ) : error ? (
-        <div className="rounded-3xl border bg-white shadow-sm p-6 dark:border-slate-800 dark:bg-slate-900">
-          <div className="text-lg font-black text-slate-900 dark:text-slate-100">Assinatura</div>
+        <div className="rounded-3xl border bg-white shadow-sm p-6 dark:border-vinke-navy-line dark:bg-vinke-navy-card">
+          <div className="text-lg font-black text-vinke-ink dark:text-slate-100">Assinatura</div>
           <div className="mt-2 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-red-700 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-300">
             {error}
           </div>
 
-          <div className="mt-4 text-sm text-slate-600 dark:text-slate-300">
+          <div className="mt-4 text-sm text-vinke-ink2 dark:text-slate-300">
             Se você acabou de comprar, aguarde alguns instantes para o webhook atualizar seu acesso.
           </div>
 
@@ -243,23 +243,23 @@ export default function AssinaturaClient() {
                   "rounded-3xl border shadow-sm p-6",
                   warning.tone === "danger"
                     ? "border-red-200 bg-red-50 dark:border-red-900/40 dark:bg-red-950/30"
-                    : "border-amber-200 bg-amber-50 dark:border-amber-900/40 dark:bg-amber-950/30",
+                    : "border-transparent bg-vinke-amber-soft dark:border-amber-900/40 dark:bg-amber-950/30",
                 ].join(" ")}
               >
-                <div className="text-lg font-black text-slate-900 dark:text-slate-100">Atenção</div>
-                <div className="mt-1 text-sm text-slate-700 dark:text-slate-200">{warning.text}</div>
+                <div className="text-lg font-black text-vinke-ink dark:text-slate-100">Atenção</div>
+                <div className="mt-1 text-sm text-vinke-ink2 dark:text-slate-200">{warning.text}</div>
               </div>
             ) : null}
 
             {/* Card principal */}
-            <div className="rounded-3xl border bg-white shadow-sm p-6 dark:border-slate-800 dark:bg-slate-900">
+            <div className="rounded-3xl border bg-white shadow-sm p-6 dark:border-vinke-navy-line dark:bg-vinke-navy-card">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
-                  <div className="text-sm text-slate-500 dark:text-slate-400">Seu plano</div>
-                  <div className="mt-1 text-xl font-black text-slate-900 truncate dark:text-slate-100">{planName}</div>
-                  <div className="mt-2 text-sm text-slate-600 dark:text-slate-300">
+                  <div className="text-sm text-vinke-ink3 dark:text-vinke-ink4">Seu plano</div>
+                  <div className="mt-1 text-xl font-black text-vinke-ink truncate dark:text-slate-100">{planName}</div>
+                  <div className="mt-2 text-sm text-vinke-ink2 dark:text-slate-300">
                     E-mail:{" "}
-                    <span className="font-semibold text-slate-900 dark:text-slate-100">
+                    <span className="font-semibold text-vinke-ink dark:text-slate-100">
                       {ent?.email || user?.email || "—"}
                     </span>
                   </div>
@@ -276,33 +276,33 @@ export default function AssinaturaClient() {
               </div>
 
               <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="rounded-2xl border bg-slate-50 p-5 dark:border-slate-700 dark:bg-slate-800">
-                  <div className="text-xs text-slate-500 dark:text-slate-400">Vencimento</div>
-                  <div className="mt-2 text-2xl font-black text-slate-900 dark:text-slate-100">{vencimento}</div>
-                  <div className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+                <div className="rounded-2xl border bg-vinke-offwhite p-5 dark:border-vinke-navy-line dark:bg-vinke-navy-sel">
+                  <div className="text-xs text-vinke-ink3 dark:text-vinke-ink4">Vencimento</div>
+                  <div className="mt-2 text-2xl font-black text-vinke-ink dark:text-slate-100">{vencimento}</div>
+                  <div className="mt-1 text-sm text-vinke-ink2 dark:text-slate-300">
                     {remainingDays === null ? "—" : expired ? "Expirada" : `${remainingDays} dia(s) restantes`}
                   </div>
                 </div>
 
-                <div className="rounded-2xl border bg-slate-50 p-5 dark:border-slate-700 dark:bg-slate-800">
-                  <div className="text-xs text-slate-500 dark:text-slate-400">Valor</div>
-                  <div className="mt-2 text-2xl font-black text-slate-900 dark:text-slate-100">{paidText}</div>
-                  <div className="mt-1 text-sm text-slate-600 dark:text-slate-300">{ent?.currency || "BRL"}</div>
+                <div className="rounded-2xl border bg-vinke-offwhite p-5 dark:border-vinke-navy-line dark:bg-vinke-navy-sel">
+                  <div className="text-xs text-vinke-ink3 dark:text-vinke-ink4">Valor</div>
+                  <div className="mt-2 text-2xl font-black text-vinke-ink dark:text-slate-100">{paidText}</div>
+                  <div className="mt-1 text-sm text-vinke-ink2 dark:text-slate-300">{ent?.currency || "BRL"}</div>
                 </div>
 
-                <div className="rounded-2xl border bg-slate-50 p-5 dark:border-slate-700 dark:bg-slate-800">
-                  <div className="text-xs text-slate-500 dark:text-slate-400">Produto</div>
-                  <div className="mt-2 text-sm font-semibold text-slate-900 dark:text-slate-100">
+                <div className="rounded-2xl border bg-vinke-offwhite p-5 dark:border-vinke-navy-line dark:bg-vinke-navy-sel">
+                  <div className="text-xs text-vinke-ink3 dark:text-vinke-ink4">Produto</div>
+                  <div className="mt-2 text-sm font-semibold text-vinke-ink dark:text-slate-100">
                     {ent?.productId ? `ID: ${ent.productId}` : "—"}
                   </div>
-                  <div className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                    Origem: <span className="font-semibold text-slate-700 dark:text-slate-200">{ent?.source || "—"}</span>
+                  <div className="mt-2 text-xs text-vinke-ink3 dark:text-vinke-ink4">
+                    Origem: <span className="font-semibold text-vinke-ink2 dark:text-slate-200">{ent?.source || "—"}</span>
                   </div>
                 </div>
               </div>
 
-              <div className="mt-6 pt-5 border-t border-slate-200 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between dark:border-slate-800">
-                <div className="text-sm text-slate-600 dark:text-slate-300">
+              <div className="mt-6 pt-5 border-t border-vinke-line flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between dark:border-vinke-navy-line">
+                <div className="text-sm text-vinke-ink2 dark:text-slate-300">
                   Precisa de ajuda com sua assinatura? Fale com o suporte.
                 </div>
 
@@ -319,27 +319,27 @@ export default function AssinaturaClient() {
           </div>
 
           {/* Lateral */}
-          <div className="rounded-3xl border bg-white shadow-sm p-6 dark:border-slate-800 dark:bg-slate-900">
-            <div className="text-lg font-black text-slate-900 dark:text-slate-100">Dicas</div>
+          <div className="rounded-3xl border bg-white shadow-sm p-6 dark:border-vinke-navy-line dark:bg-vinke-navy-card">
+            <div className="text-lg font-black text-vinke-ink dark:text-slate-100">Dicas</div>
 
             <div className="mt-4 space-y-3">
-              <div className="rounded-2xl border bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
-                <div className="text-sm font-bold text-slate-900 dark:text-slate-100">Atualização automática</div>
-                <div className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+              <div className="rounded-2xl border bg-white p-4 dark:border-vinke-navy-line dark:bg-vinke-navy-card">
+                <div className="text-sm font-bold text-vinke-ink dark:text-slate-100">Atualização automática</div>
+                <div className="mt-1 text-sm text-vinke-ink2 dark:text-slate-300">
                   Seu acesso é atualizado via webhook da Eduzz (pagamento/renovação/cancelamento).
                 </div>
               </div>
 
-              <div className="rounded-2xl border bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
-                <div className="text-sm font-bold text-slate-900 dark:text-slate-100">Mudou de e-mail?</div>
-                <div className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+              <div className="rounded-2xl border bg-white p-4 dark:border-vinke-navy-line dark:bg-vinke-navy-card">
+                <div className="text-sm font-bold text-vinke-ink dark:text-slate-100">Mudou de e-mail?</div>
+                <div className="mt-1 text-sm text-vinke-ink2 dark:text-slate-300">
                   Se comprou com outro e-mail, o sistema cria o acesso por aquele e-mail.
                 </div>
               </div>
 
-              <div className="rounded-2xl border bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
-                <div className="text-sm font-bold text-slate-900 dark:text-slate-100">Renovação</div>
-                <div className="mt-1 text-sm text-slate-600 dark:text-slate-300">
+              <div className="rounded-2xl border bg-white p-4 dark:border-vinke-navy-line dark:bg-vinke-navy-card">
+                <div className="text-sm font-bold text-vinke-ink dark:text-slate-100">Renovação</div>
+                <div className="mt-1 text-sm text-vinke-ink2 dark:text-slate-300">
                   Se sua assinatura estiver expirada, faça a renovação na Eduzz e clique em <b>Atualizar</b>.
                 </div>
               </div>

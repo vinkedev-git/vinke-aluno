@@ -243,7 +243,7 @@ export default function CadernoClient() {
   if (loading) {
     return (
       <div className="space-y-4">
-        <div className="h-8 w-56 animate-pulse rounded-2xl bg-slate-200 dark:bg-slate-800" />
+        <div className="h-8 w-56 animate-pulse rounded-2xl bg-vinke-line2 dark:bg-vinke-navy-sel" />
         <SkeletonCard lines={3} />
         <SkeletonCard lines={3} />
       </div>
@@ -254,9 +254,9 @@ export default function CadernoClient() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <div className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-500">Revisão</div>
-        <div className="mt-0.5 text-3xl font-black text-slate-900 dark:text-slate-100">Caderno de Erros</div>
-        <div className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+        <div className="text-xs font-bold uppercase tracking-widest text-vinke-ink3 dark:text-vinke-ink3">Revisão</div>
+        <div className="mt-0.5 text-3xl font-black text-vinke-ink dark:text-slate-100">Caderno de Erros</div>
+        <div className="mt-1 text-sm text-vinke-ink3 dark:text-vinke-ink4">
           As questões que você errou ficam aqui automaticamente. Acerte de novo para marcá-las como resolvidas.
         </div>
       </div>
@@ -269,12 +269,12 @@ export default function CadernoClient() {
           className={cn(
             "flex items-center gap-2 rounded-2xl border px-4 py-2 text-sm font-semibold transition",
             tab === "pending"
-              ? "border-rose-300 bg-rose-50 text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-300"
-              : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+              ? "border-vinke-red bg-vinke-red-soft text-vinke-red dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-vinke-red-dark"
+              : "border-vinke-line bg-white text-vinke-ink2 hover:bg-vinke-offwhite dark:border-vinke-navy-line dark:bg-vinke-navy-card dark:text-slate-300 dark:hover:bg-vinke-navy-sel"
           )}
         >
           Pendentes
-          <span className="rounded-full bg-rose-500/15 px-2 py-0.5 text-[11px] font-bold text-rose-600 dark:text-rose-300">
+          <span className="rounded-full bg-vinke-red/15 px-2 py-0.5 text-[11px] font-bold text-vinke-red dark:text-vinke-red-dark">
             {counts.pending}
           </span>
         </button>
@@ -284,12 +284,12 @@ export default function CadernoClient() {
           className={cn(
             "flex items-center gap-2 rounded-2xl border px-4 py-2 text-sm font-semibold transition",
             tab === "resolved"
-              ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-300"
-              : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+              ? "border-vinke-green bg-vinke-green-soft text-vinke-green-text dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-vinke-green"
+              : "border-vinke-line bg-white text-vinke-ink2 hover:bg-vinke-offwhite dark:border-vinke-navy-line dark:bg-vinke-navy-card dark:text-slate-300 dark:hover:bg-vinke-navy-sel"
           )}
         >
           Resolvidas
-          <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-300">
+          <span className="rounded-full bg-vinke-green/15 px-2 py-0.5 text-[11px] font-bold text-vinke-green-text dark:text-vinke-green">
             {counts.resolved}
           </span>
         </button>
@@ -297,18 +297,18 @@ export default function CadernoClient() {
 
       {/* Empty state */}
       {filtered.length === 0 && !query && !selectedTema ? (
-        <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center dark:border-slate-800/80 dark:bg-slate-900/50">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-800">
+        <div className="rounded-2xl border border-vinke-line bg-white p-8 text-center dark:border-vinke-navy-line dark:bg-vinke-navy-card">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-vinke-line2 dark:bg-vinke-navy-sel">
             {tab === "pending" ? (
-              <NotebookPen size={24} className="text-slate-400" />
+              <NotebookPen size={24} className="text-vinke-ink4" />
             ) : (
               <CheckCircle2 size={24} className="text-emerald-400" />
             )}
           </div>
-          <div className="mt-3 text-base font-black text-slate-900 dark:text-slate-100">
+          <div className="mt-3 text-base font-black text-vinke-ink dark:text-slate-100">
             {tab === "pending" ? "Nenhum erro por aqui 🎉" : "Nada resolvido ainda"}
           </div>
-          <div className="mx-auto mt-1 max-w-md text-sm text-slate-500 dark:text-slate-400">
+          <div className="mx-auto mt-1 max-w-md text-sm text-vinke-ink3 dark:text-vinke-ink4">
             {tab === "pending"
               ? "Quando você errar uma questão num simulado, ela aparecerá aqui automaticamente para revisão."
               : "Acerte de novo as questões pendentes para vê-las marcadas como resolvidas aqui."}
@@ -325,13 +325,13 @@ export default function CadernoClient() {
           {/* Filtros */}
           <div className="space-y-3">
             <div className="relative">
-              <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+              <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-vinke-ink4" />
               <input
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Buscar no enunciado ou assunto…"
-                className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 pl-9 pr-3 text-sm text-slate-900 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-200/40 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:focus:border-blue-500"
+                className="h-10 w-full rounded-xl border border-vinke-line bg-vinke-offwhite pl-9 pr-3 text-sm text-vinke-ink outline-none transition focus:border-vinke focus:ring-2 focus:ring-blue-200/40 dark:border-vinke-navy-line dark:bg-vinke-navy-sel dark:text-slate-100 dark:focus:border-blue-500"
               />
             </div>
             {allTemas.length > 0 && (
@@ -342,8 +342,8 @@ export default function CadernoClient() {
                   className={cn(
                     "rounded-2xl border px-3 py-1 text-xs font-semibold transition",
                     selectedTema === null
-                      ? "border-slate-900 bg-slate-900 text-white dark:border-blue-500 dark:bg-blue-500"
-                      : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+                      ? "border-vinke bg-vinke text-white"
+                      : "border-vinke-line bg-white text-vinke-ink2 hover:bg-vinke-offwhite dark:border-vinke-navy-line dark:bg-vinke-navy-card dark:text-slate-300 dark:hover:bg-vinke-navy-sel"
                   )}
                 >
                   Todos
@@ -356,8 +356,8 @@ export default function CadernoClient() {
                     className={cn(
                       "rounded-2xl border px-3 py-1 text-xs font-semibold transition",
                       selectedTema === t
-                        ? "border-slate-900 bg-slate-900 text-white dark:border-blue-500 dark:bg-blue-500"
-                        : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
+                        ? "border-vinke bg-vinke text-white"
+                        : "border-vinke-line bg-white text-vinke-ink2 hover:bg-vinke-offwhite dark:border-vinke-navy-line dark:bg-vinke-navy-card dark:text-slate-300 dark:hover:bg-vinke-navy-sel"
                     )}
                   >
                     {t}
@@ -369,12 +369,12 @@ export default function CadernoClient() {
 
           {/* Refazer como simulado */}
           {tab === "pending" && filtered.length > 0 && (
-            <div className="flex flex-col gap-3 rounded-2xl border border-indigo-200/70 bg-gradient-to-br from-indigo-50 to-blue-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-indigo-900/40 dark:from-indigo-950/30 dark:to-blue-950/20">
-              <div className="text-sm text-slate-600 dark:text-slate-300">
+            <div className="flex flex-col gap-3 rounded-2xl border border-vinke-ring/70 bg-gradient-to-br from-indigo-50 to-blue-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-indigo-900/40 dark:from-indigo-950/30 dark:to-blue-950/20">
+              <div className="text-sm text-vinke-ink2 dark:text-slate-300">
                 Treine com um simulado montado só com seus erros
-                {selectedTema ? <> de <b className="text-slate-900 dark:text-slate-100">{selectedTema}</b></> : null}.
+                {selectedTema ? <> de <b className="text-vinke-ink dark:text-slate-100">{selectedTema}</b></> : null}.
                 {filtered.length > MAX_REVIEW_QUESTIONS && (
-                  <span className="text-slate-500 dark:text-slate-400"> {" "}(usaremos {MAX_REVIEW_QUESTIONS} aleatórias de {filtered.length})</span>
+                  <span className="text-vinke-ink3 dark:text-vinke-ink4"> {" "}(usaremos {MAX_REVIEW_QUESTIONS} aleatórias de {filtered.length})</span>
                 )}
               </div>
               <Button onClick={createReviewSimulado} disabled={creating} className="w-full gap-2 sm:w-auto">
@@ -386,7 +386,7 @@ export default function CadernoClient() {
 
           {/* Lista */}
           {filtered.length === 0 ? (
-            <div className="rounded-2xl border border-slate-200 bg-white p-6 text-center text-sm text-slate-500 dark:border-slate-800/80 dark:bg-slate-900/50 dark:text-slate-400">
+            <div className="rounded-2xl border border-vinke-line bg-white p-6 text-center text-sm text-vinke-ink3 dark:border-vinke-navy-line dark:bg-vinke-navy-card dark:text-vinke-ink4">
               Nenhuma questão encontrada com esses filtros.
             </div>
           ) : (
@@ -440,29 +440,29 @@ function ErrorCard({
   const statementHtml = detail ? toHtml(getStatement(detail)) : "";
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800/80 dark:bg-slate-900/50">
+    <div className="rounded-2xl border border-vinke-line bg-white p-4 dark:border-vinke-navy-line dark:bg-vinke-navy-card">
       {/* Top */}
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-1.5">
             {(item.temas ?? []).slice(0, 3).map((t) => (
-              <span key={t} className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+              <span key={t} className="rounded-full border border-vinke-line bg-vinke-offwhite px-2 py-0.5 text-[10px] font-semibold text-vinke-ink2 dark:border-vinke-navy-line dark:bg-vinke-navy-sel dark:text-slate-300">
                 {t}
               </span>
             ))}
             {(item.timesWrong ?? 0) > 0 && (
-              <span className="rounded-full bg-rose-500/10 px-2 py-0.5 text-[10px] font-bold text-rose-600 dark:text-rose-300">
+              <span className="rounded-full bg-vinke-red/10 px-2 py-0.5 text-[10px] font-bold text-vinke-red dark:text-vinke-red-dark">
                 Errou {item.timesWrong}×
               </span>
             )}
           </div>
-          <button onClick={toggle} className="mt-2 block text-left text-sm leading-6 text-slate-800 dark:text-slate-200">
+          <button onClick={toggle} className="mt-2 block text-left text-sm leading-6 text-vinke-ink dark:text-slate-200">
             {item.enunciadoSnippet || "Questão sem enunciado."}
           </button>
         </div>
         <button
           onClick={toggle}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-slate-200 text-slate-500 transition hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-vinke-line text-vinke-ink3 transition hover:bg-vinke-offwhite dark:border-vinke-navy-line dark:hover:bg-vinke-navy-sel"
           aria-label={open ? "Recolher" : "Ver questão"}
         >
           {open ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
@@ -471,19 +471,19 @@ function ErrorCard({
 
       {/* Detail */}
       {open && (
-        <div className="mt-4 border-t border-slate-100 pt-4 dark:border-slate-800">
+        <div className="mt-4 border-t border-vinke-line2 pt-4 dark:border-vinke-navy-line">
           {loadingDetail ? (
             <div className="space-y-2">
-              <div className="h-4 w-3/4 animate-pulse rounded bg-slate-200 dark:bg-slate-800" />
-              <div className="h-4 w-1/2 animate-pulse rounded bg-slate-200 dark:bg-slate-800" />
+              <div className="h-4 w-3/4 animate-pulse rounded bg-vinke-line2 dark:bg-vinke-navy-sel" />
+              <div className="h-4 w-1/2 animate-pulse rounded bg-vinke-line2 dark:bg-vinke-navy-sel" />
             </div>
           ) : notFound ? (
-            <div className="text-sm text-slate-400 italic">Não foi possível carregar esta questão.</div>
+            <div className="text-sm text-vinke-ink4 italic">Não foi possível carregar esta questão.</div>
           ) : detail ? (
             <div className="space-y-4">
               {statementHtml && (
                 <div
-                  className="text-sm leading-6 text-slate-800 dark:text-slate-200 [&_p]:my-1 [&_ul]:my-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:my-1 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:underline"
+                  className="text-sm leading-6 text-vinke-ink dark:text-slate-200 [&_p]:my-1 [&_ul]:my-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:my-1 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:underline"
                   dangerouslySetInnerHTML={{ __html: statementHtml }}
                 />
               )}
@@ -493,7 +493,7 @@ function ErrorCard({
                 <img
                   src={safeStr(detail.imageUrl)}
                   alt="Imagem da questão"
-                  className="max-h-56 w-auto rounded-xl border border-slate-200 dark:border-slate-700"
+                  className="max-h-56 w-auto rounded-xl border border-vinke-line dark:border-vinke-navy-line"
                 />
               ) : null}
 
@@ -510,31 +510,31 @@ function ErrorCard({
                         className={cn(
                           "flex items-start gap-2 rounded-xl border px-3 py-2 text-sm",
                           isCorrect
-                            ? "border-emerald-200 bg-emerald-50 dark:border-emerald-900/40 dark:bg-emerald-950/30"
+                            ? "border-vinke-green-soft bg-vinke-green-soft dark:border-emerald-900/40 dark:bg-emerald-950/30"
                             : isChosen
-                            ? "border-rose-200 bg-rose-50 dark:border-rose-900/40 dark:bg-rose-950/30"
-                            : "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900"
+                            ? "border-vinke-red-soft bg-vinke-red-soft dark:border-rose-900/40 dark:bg-rose-950/30"
+                            : "border-vinke-line bg-white dark:border-vinke-navy-line dark:bg-vinke-navy-card"
                         )}
                       >
                         <span className={cn(
                           "flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[11px] font-black text-white",
-                          isCorrect ? "bg-emerald-500" : isChosen ? "bg-rose-500" : "bg-slate-300 dark:bg-slate-600"
+                          isCorrect ? "bg-vinke-green" : isChosen ? "bg-vinke-red" : "bg-vinke-ink4 dark:bg-vinke-navy-sel"
                         )}>
                           {oid}
                         </span>
-                        <span className="min-w-0 text-slate-700 dark:text-slate-200">
+                        <span className="min-w-0 text-vinke-ink2 dark:text-slate-200">
                           <span className="block">{safeStr(opt.text) || "—"}</span>
                           {opt.imageUrl ? (
                             /* eslint-disable-next-line @next/next/no-img-element */
                             <img
                               src={opt.imageUrl}
                               alt=""
-                              className="mt-2 max-h-36 rounded-lg border border-slate-200 dark:border-slate-700"
+                              className="mt-2 max-h-36 rounded-lg border border-vinke-line dark:border-vinke-navy-line"
                             />
                           ) : null}
                         </span>
-                        {isCorrect && <CheckCircle2 size={15} className="ml-auto shrink-0 text-emerald-500" />}
-                        {isChosen && !isCorrect && <XCircle size={15} className="ml-auto shrink-0 text-rose-500" />}
+                        {isCorrect && <CheckCircle2 size={15} className="ml-auto shrink-0 text-vinke-green" />}
+                        {isChosen && !isCorrect && <XCircle size={15} className="ml-auto shrink-0 text-vinke-red" />}
                       </div>
                     );
                   })}
@@ -543,10 +543,10 @@ function ErrorCard({
 
               {/* Comentário */}
               {explanationHtml && (
-                <div className="rounded-xl bg-slate-50 p-3 dark:bg-slate-800/60">
-                  <div className="text-[11px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">Comentário</div>
+                <div className="rounded-xl bg-vinke-offwhite p-3 dark:bg-vinke-navy-sel">
+                  <div className="text-[11px] font-bold uppercase tracking-wide text-vinke-ink3 dark:text-vinke-ink4">Comentário</div>
                   <div
-                    className="mt-1 text-sm leading-6 text-slate-700 dark:text-slate-300 [&_p]:my-1 [&_ul]:my-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:my-1 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:underline"
+                    className="mt-1 text-sm leading-6 text-vinke-ink2 dark:text-slate-300 [&_p]:my-1 [&_ul]:my-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:my-1 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:underline"
                     dangerouslySetInnerHTML={{ __html: explanationHtml }}
                   />
                 </div>

@@ -167,10 +167,10 @@ export default function FlashcardsClient() {
     <div className="mx-auto max-w-6xl space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">
+        <h1 className="text-2xl font-black tracking-tight text-vinke-ink dark:text-white">
           Flashcards
         </h1>
-        <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+        <p className="mt-1 text-sm text-vinke-ink3 dark:text-vinke-ink4">
           Revisão inteligente com repetição espaçada. Estude cards do dia ou escolha um deck específico.
         </p>
       </div>
@@ -201,7 +201,7 @@ export default function FlashcardsClient() {
       )}
 
       {/* Card destacado: Estudar hoje */}
-      <div className="overflow-hidden rounded-3xl border border-blue-200 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 p-8 text-white shadow-lg">
+      <div className="overflow-hidden rounded-3xl border border-vinke-ring bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 p-8 text-white shadow-lg">
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-blue-200">
@@ -233,7 +233,7 @@ export default function FlashcardsClient() {
                 onClick={() => chooseSessionSize(n)}
                 className={`rounded-xl px-4 py-1.5 text-sm font-bold transition ${
                   sessionSize === n
-                    ? "bg-white text-blue-700"
+                    ? "bg-white text-vinke"
                     : "bg-white/15 text-white hover:bg-white/25"
                 }`}
               >
@@ -245,7 +245,7 @@ export default function FlashcardsClient() {
               onClick={() => chooseSessionSize(null)}
               className={`rounded-xl px-4 py-1.5 text-sm font-bold transition ${
                 sessionSize === null
-                  ? "bg-white text-blue-700"
+                  ? "bg-white text-vinke"
                   : "bg-white/15 text-white hover:bg-white/25"
               }`}
             >
@@ -256,7 +256,7 @@ export default function FlashcardsClient() {
 
         <Link
           href={studyHref()}
-          className="mt-5 inline-flex items-center gap-1.5 rounded-xl bg-white px-4 py-2 text-sm font-bold text-blue-700 transition hover:bg-blue-50"
+          className="mt-5 inline-flex items-center gap-1.5 rounded-xl bg-white px-4 py-2 text-sm font-bold text-vinke transition hover:bg-vinke-soft"
         >
           Começar agora →
         </Link>
@@ -266,11 +266,11 @@ export default function FlashcardsClient() {
       {!loading && suggestedDecks.length > 0 && !isSearching && (
         <div>
           <div className="mb-3 flex items-center gap-2">
-            <Target size={18} className="text-rose-500" />
-            <h3 className="text-lg font-black text-slate-900 dark:text-white">
+            <Target size={18} className="text-vinke-red" />
+            <h3 className="text-lg font-black text-vinke-ink dark:text-white">
               Sugeridos para você
             </h3>
-            <span className="rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-rose-600 dark:bg-rose-950/40 dark:text-rose-400">
+            <span className="rounded-full bg-vinke-red-soft px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-vinke-red dark:bg-rose-950/40 dark:text-vinke-red">
               foco nos seus pontos fracos
             </span>
           </div>
@@ -285,10 +285,10 @@ export default function FlashcardsClient() {
       {/* Decks */}
       <div>
         <div className="mb-3 flex items-center justify-between gap-3">
-          <h3 className="shrink-0 text-lg font-black text-slate-900 dark:text-white">
+          <h3 className="shrink-0 text-lg font-black text-vinke-ink dark:text-white">
             Todos os decks
           </h3>
-          <span className="text-xs text-slate-500">
+          <span className="text-xs text-vinke-ink3">
             {loading
               ? "..."
               : isSearching
@@ -302,14 +302,14 @@ export default function FlashcardsClient() {
           <div className="relative mb-4">
             <Search
               size={16}
-              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+              className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-vinke-ink4"
             />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar deck por tema... ex: pediatria, obstetrícia, dor"
-              className="w-full rounded-2xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-800 placeholder:text-slate-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-100 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:focus:border-blue-600 dark:focus:ring-blue-950"
+              className="w-full rounded-2xl border border-vinke-line bg-white py-2.5 pl-10 pr-4 text-sm text-vinke-ink placeholder:text-vinke-ink4 focus:border-vinke focus:outline-none focus:ring-2 focus:ring-blue-100 dark:border-vinke-navy-line dark:bg-vinke-navy-card dark:text-slate-200 dark:focus:border-blue-600 dark:focus:ring-blue-950"
             />
           </div>
         )}
@@ -317,26 +317,26 @@ export default function FlashcardsClient() {
         {loading ? (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="h-24 animate-pulse rounded-2xl bg-slate-100 dark:bg-slate-800" />
+              <div key={i} className="h-24 animate-pulse rounded-2xl bg-vinke-line2 dark:bg-vinke-navy-sel" />
             ))}
           </div>
         ) : decks.length === 0 ? (
-          <div className="rounded-3xl border border-slate-200 bg-white p-8 text-center dark:border-slate-800 dark:bg-slate-900">
+          <div className="rounded-3xl border border-vinke-line bg-white p-8 text-center dark:border-vinke-navy-line dark:bg-vinke-navy-card">
             <Layers size={40} className="mx-auto mb-3 text-slate-300" />
-            <div className="font-semibold text-slate-700 dark:text-slate-300">
+            <div className="font-semibold text-vinke-ink2 dark:text-slate-300">
               Nenhum deck publicado ainda
             </div>
-            <div className="mt-1 text-sm text-slate-500">
+            <div className="mt-1 text-sm text-vinke-ink3">
               Novos decks aparecerão aqui em breve.
             </div>
           </div>
         ) : filteredDecks.length === 0 ? (
-          <div className="rounded-3xl border border-slate-200 bg-white p-8 text-center dark:border-slate-800 dark:bg-slate-900">
+          <div className="rounded-3xl border border-vinke-line bg-white p-8 text-center dark:border-vinke-navy-line dark:bg-vinke-navy-card">
             <Search size={40} className="mx-auto mb-3 text-slate-300" />
-            <div className="font-semibold text-slate-700 dark:text-slate-300">
+            <div className="font-semibold text-vinke-ink2 dark:text-slate-300">
               Nenhum deck encontrado
             </div>
-            <div className="mt-1 text-sm text-slate-500">
+            <div className="mt-1 text-sm text-vinke-ink3">
               Tente buscar por outro termo, ex: &quot;pediatria&quot; ou &quot;dor&quot;.
             </div>
           </div>
@@ -351,7 +351,7 @@ export default function FlashcardsClient() {
               <button
                 type="button"
                 onClick={() => setShowAll(true)}
-                className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-2xl border border-slate-200 bg-white py-3 text-sm font-bold text-slate-600 transition hover:border-blue-300 hover:text-blue-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-blue-700 dark:hover:text-blue-400"
+                className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-2xl border border-vinke-line bg-white py-3 text-sm font-bold text-vinke-ink2 transition hover:border-blue-300 hover:text-vinke dark:border-vinke-navy-line dark:bg-vinke-navy-card dark:text-slate-300 dark:hover:border-blue-700 dark:hover:text-blue-400"
               >
                 <ChevronDown size={16} />
                 Mostrar todos os {filteredDecks.length} decks
@@ -378,25 +378,25 @@ function DeckCard({
       href={href}
       className={`group rounded-2xl border p-4 shadow-sm transition hover:shadow-md ${
         highlighted
-          ? "border-rose-200 bg-rose-50/50 hover:border-rose-300 dark:border-rose-900/50 dark:bg-rose-950/20 dark:hover:border-rose-700"
-          : "border-slate-200 bg-white hover:border-blue-300 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-blue-700"
+          ? "border-vinke-red-soft bg-vinke-red-soft/50 hover:border-vinke-red dark:border-rose-900/50 dark:bg-rose-950/20 dark:hover:border-rose-700"
+          : "border-vinke-line bg-white hover:border-blue-300 dark:border-vinke-navy-line dark:bg-vinke-navy-card dark:hover:border-blue-700"
       }`}
     >
       <div className="mb-1 flex items-center gap-2">
         {deck.moduleId && (
-          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+          <span className="rounded-full bg-vinke-line2 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-vinke-ink2 dark:bg-vinke-navy-sel dark:text-slate-300">
             {MODULE_LABEL[deck.moduleId as Module]}
           </span>
         )}
-        <span className="text-xs text-slate-500">
+        <span className="text-xs text-vinke-ink3">
           {deck.cardCount} card(s)
         </span>
       </div>
       <div
         className={`font-semibold ${
           highlighted
-            ? "text-slate-800 group-hover:text-rose-600 dark:text-slate-200 dark:group-hover:text-rose-400"
-            : "text-slate-800 group-hover:text-blue-600 dark:text-slate-200 dark:group-hover:text-blue-400"
+            ? "text-vinke-ink group-hover:text-vinke-red dark:text-slate-200 dark:group-hover:text-vinke-red"
+            : "text-vinke-ink group-hover:text-vinke dark:text-slate-200 dark:group-hover:text-blue-400"
         }`}
       >
         {deck.title}
@@ -410,7 +410,7 @@ function DeckCard({
 function LoadingScreen() {
   return (
     <div className="flex min-h-[50vh] items-center justify-center">
-      <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-200 border-t-blue-600" />
+      <div className="h-10 w-10 animate-spin rounded-full border-4 border-vinke-ring border-t-blue-600" />
     </div>
   );
 }
@@ -434,25 +434,25 @@ function StatCard({
       icon: "text-orange-500",
     },
     emerald: {
-      bg: "border-emerald-200 bg-emerald-50 dark:border-emerald-900/50 dark:bg-emerald-950/30",
-      icon: "text-emerald-500",
+      bg: "border-vinke-green-soft bg-vinke-green-soft dark:border-emerald-900/50 dark:bg-emerald-950/30",
+      icon: "text-vinke-green",
     },
     blue: {
-      bg: "border-blue-200 bg-blue-50 dark:border-blue-900/50 dark:bg-blue-950/30",
-      icon: "text-blue-500",
+      bg: "border-vinke-ring bg-vinke-soft dark:border-blue-900/50 dark:bg-blue-950/30",
+      icon: "text-vinke",
     },
   };
   return (
     <div className={`rounded-2xl border p-4 ${colors[tone].bg}`}>
       <div className="flex items-center gap-2">
         <Icon size={18} className={colors[tone].icon} />
-        <div className="text-xs font-semibold uppercase tracking-widest text-slate-600 dark:text-slate-300">
+        <div className="text-xs font-semibold uppercase tracking-widest text-vinke-ink2 dark:text-slate-300">
           {label}
         </div>
       </div>
-      <div className="mt-2 text-2xl font-black text-slate-900 dark:text-white">
+      <div className="mt-2 text-2xl font-black text-vinke-ink dark:text-white">
         {value.toLocaleString("pt-BR")}
-        {suffix && <span className="ml-1 text-sm font-normal text-slate-500">{suffix}</span>}
+        {suffix && <span className="ml-1 text-sm font-normal text-vinke-ink3">{suffix}</span>}
       </div>
     </div>
   );
@@ -460,14 +460,14 @@ function StatCard({
 
 function UpgradePlanScreen() {
   return (
-    <div className="mx-auto max-w-2xl rounded-3xl border border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-100 p-10 text-center dark:border-blue-900 dark:from-blue-950/40 dark:to-indigo-950/40">
+    <div className="mx-auto max-w-2xl rounded-3xl border border-vinke-ring bg-gradient-to-br from-blue-50 to-indigo-100 p-10 text-center dark:border-blue-900 dark:from-blue-950/40 dark:to-indigo-950/40">
       <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-md">
-        <Lock size={32} className="text-blue-600" />
+        <Lock size={32} className="text-vinke" />
       </div>
-      <h2 className="text-2xl font-black text-slate-900 dark:text-white">
+      <h2 className="text-2xl font-black text-vinke-ink dark:text-white">
         Recurso exclusivo do plano TSA
       </h2>
-      <p className="mx-auto mt-3 max-w-md text-sm text-slate-600 dark:text-slate-300">
+      <p className="mx-auto mt-3 max-w-md text-sm text-vinke-ink2 dark:text-slate-300">
         Os flashcards com repetição espaçada estão disponíveis apenas para
         alunos do plano <strong>Cobertura Completa (TSA)</strong>. Faça upgrade
         para desbloquear mais de <strong>2.000 cards</strong> de revisão rápida.
@@ -484,14 +484,14 @@ function UpgradePlanScreen() {
 
 function ComingSoonScreen() {
   return (
-    <div className="mx-auto max-w-2xl rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900">
-      <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-50 dark:bg-amber-950/30">
-        <Sparkles size={32} className="text-amber-500" />
+    <div className="mx-auto max-w-2xl rounded-3xl border border-vinke-line bg-white p-10 text-center shadow-sm dark:border-vinke-navy-line dark:bg-vinke-navy-card">
+      <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-vinke-amber-soft dark:bg-amber-950/30">
+        <Sparkles size={32} className="text-vinke-amber-bar" />
       </div>
-      <h2 className="text-2xl font-black text-slate-900 dark:text-white">
+      <h2 className="text-2xl font-black text-vinke-ink dark:text-white">
         Em breve
       </h2>
-      <p className="mx-auto mt-3 max-w-md text-sm text-slate-500 dark:text-slate-400">
+      <p className="mx-auto mt-3 max-w-md text-sm text-vinke-ink3 dark:text-vinke-ink4">
         Estamos preparando o novo módulo de flashcards. Volte em alguns dias!
       </p>
     </div>

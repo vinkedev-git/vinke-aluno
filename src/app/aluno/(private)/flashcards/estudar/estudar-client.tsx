@@ -240,18 +240,18 @@ export default function EstudarClient() {
   if (access.loading || loading) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-200 border-t-blue-600" />
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-vinke-ring border-t-blue-600" />
       </div>
     );
   }
 
   if (!access.hasAccess) {
     return (
-      <div className="mx-auto max-w-md rounded-3xl border border-slate-200 bg-white p-10 text-center dark:border-slate-800 dark:bg-slate-900">
-        <p className="text-slate-600 dark:text-slate-300">Você não tem acesso a este recurso.</p>
+      <div className="mx-auto max-w-md rounded-3xl border border-vinke-line bg-white p-10 text-center dark:border-vinke-navy-line dark:bg-vinke-navy-card">
+        <p className="text-vinke-ink2 dark:text-slate-300">Você não tem acesso a este recurso.</p>
         <Link
           href="/aluno/flashcards"
-          className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-blue-600"
+          className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-vinke"
         >
           <ArrowLeft size={14} /> Voltar
         </Link>
@@ -276,17 +276,17 @@ export default function EstudarClient() {
       <div className="mb-4 flex items-center justify-between">
         <Link
           href="/aluno/flashcards"
-          className="inline-flex items-center gap-1 text-sm font-semibold text-slate-500 hover:text-slate-700 dark:text-slate-400"
+          className="inline-flex items-center gap-1 text-sm font-semibold text-vinke-ink3 hover:text-vinke-ink2 dark:text-vinke-ink4"
         >
           <ArrowLeft size={14} /> Voltar
         </Link>
-        <div className="text-xs font-semibold text-slate-500">
+        <div className="text-xs font-semibold text-vinke-ink3">
           {index + 1} / {total}
         </div>
       </div>
 
       {/* Barra de progresso */}
-      <div className="mb-6 h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
+      <div className="mb-6 h-2 overflow-hidden rounded-full bg-vinke-line2 dark:bg-vinke-navy-sel">
         <div
           className="h-full bg-gradient-to-r from-emerald-500 to-blue-500 transition-all duration-300"
           style={{ width: `${progress}%` }}
@@ -297,10 +297,10 @@ export default function EstudarClient() {
       <div className="flashcard-scene">
         <div className={`flashcard-inner ${flipped ? "is-flipped" : ""}`}>
           {/* FRENTE */}
-          <div className="flashcard-face flashcard-front rounded-3xl border border-slate-200 bg-white shadow-lg dark:border-slate-800 dark:bg-slate-900">
+          <div className="flashcard-face flashcard-front rounded-3xl border border-vinke-line bg-white shadow-lg dark:border-vinke-navy-line dark:bg-vinke-navy-card">
             <div className="flex flex-col p-6 sm:p-8">
               <div className="mb-3 flex items-center gap-2">
-                <span className="text-xs font-bold uppercase tracking-widest text-blue-600">
+                <span className="text-xs font-bold uppercase tracking-widest text-vinke">
                   Pergunta
                 </span>
                 {current.isNew && (
@@ -309,14 +309,14 @@ export default function EstudarClient() {
                   </span>
                 )}
                 {current.card.themeName && (
-                  <span className="ml-auto text-xs text-slate-500">
+                  <span className="ml-auto text-xs text-vinke-ink3">
                     {current.card.themeName}
                   </span>
                 )}
               </div>
-              <p className="whitespace-pre-wrap text-lg leading-relaxed text-slate-900 dark:text-slate-100 sm:text-xl">
+              <p className="whitespace-pre-wrap text-lg leading-relaxed text-vinke-ink dark:text-slate-100 sm:text-xl">
                 {questionText || (
-                  <span className="text-slate-400 italic">
+                  <span className="text-vinke-ink4 italic">
                     Carregando pergunta...
                   </span>
                 )}
@@ -334,20 +334,20 @@ export default function EstudarClient() {
           </div>
 
           {/* VERSO */}
-          <div className="flashcard-face flashcard-back rounded-3xl border border-emerald-200 bg-emerald-50/40 shadow-lg dark:border-emerald-900 dark:bg-emerald-950/20">
+          <div className="flashcard-face flashcard-back rounded-3xl border border-vinke-green-soft bg-vinke-green-soft/40 shadow-lg dark:border-emerald-900 dark:bg-emerald-950/20">
             <div className="flex flex-col p-6 sm:p-8">
-              <div className="mb-2 text-xs font-bold uppercase tracking-widest text-emerald-600">
+              <div className="mb-2 text-xs font-bold uppercase tracking-widest text-vinke-green-text">
                 Resposta
               </div>
-              <p className="text-xl font-bold text-emerald-800 dark:text-emerald-300">
+              <p className="text-xl font-bold text-emerald-800 dark:text-vinke-green">
                 {current.card.backText}
               </p>
               {current.card.shortExplanation && (
                 <>
-                  <div className="mt-6 mb-2 text-xs font-bold uppercase tracking-widest text-slate-500">
+                  <div className="mt-6 mb-2 text-xs font-bold uppercase tracking-widest text-vinke-ink3">
                     Explicação
                   </div>
-                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-vinke-ink2 dark:text-slate-300">
                     {current.card.shortExplanation}
                   </p>
                 </>
@@ -443,9 +443,9 @@ function AnswerButton({
   const colors: Record<string, string> = {
     red: "border-red-200 bg-red-50 text-red-700 hover:bg-red-100 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300",
     amber:
-      "border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-300",
+      "border-transparent bg-vinke-amber-soft text-vinke-amber hover:bg-amber-100 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-300",
     emerald:
-      "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-300",
+      "border-vinke-green-soft bg-vinke-green-soft text-vinke-green-text hover:bg-vinke-green-soft dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-vinke-green",
   };
   return (
     <button
@@ -463,7 +463,7 @@ function AnswerButton({
 
 function Kbd({ children }: { children: React.ReactNode }) {
   return (
-    <kbd className="inline-flex items-center rounded border border-slate-300 bg-white/70 px-1.5 py-0.5 text-[10px] font-mono font-semibold text-slate-600 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-300">
+    <kbd className="inline-flex items-center rounded border border-vinke-ink4 bg-white/70 px-1.5 py-0.5 text-[10px] font-mono font-semibold text-vinke-ink2 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-300">
       {children}
     </kbd>
   );
@@ -481,16 +481,16 @@ function DoneScreen({
     : 0;
 
   return (
-    <div className="mx-auto max-w-lg rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-lg dark:border-slate-800 dark:bg-slate-900">
+    <div className="mx-auto max-w-lg rounded-3xl border border-vinke-line bg-white p-8 text-center shadow-lg dark:border-vinke-navy-line dark:bg-vinke-navy-card">
       <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 to-blue-500 text-white shadow-lg">
         <Sparkles size={40} />
       </div>
-      <h2 className="text-2xl font-black text-slate-900 dark:text-white">
+      <h2 className="text-2xl font-black text-vinke-ink dark:text-white">
         {stats.reviewed === 0 ? "Nenhum card para hoje" : "Sessão concluída!"}
       </h2>
       {stats.reviewed > 0 && (
         <>
-          <p className="mt-2 text-sm text-slate-500">
+          <p className="mt-2 text-sm text-vinke-ink3">
             Você revisou {stats.reviewed} card(s) e acertou {percent}%.
           </p>
           <div className="mt-6 grid grid-cols-3 gap-3">
@@ -499,7 +499,7 @@ function DoneScreen({
             <MiniStat label="Não sabia" value={stats.wrong} tone="red" />
           </div>
           {stats.newMastered > 0 && (
-            <div className="mt-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-300">
+            <div className="mt-4 rounded-2xl border border-vinke-green-soft bg-vinke-green-soft px-4 py-3 text-sm font-semibold text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-vinke-green">
               🎉 {stats.newMastered} novo(s) card(s) dominado(s)!
             </div>
           )}
@@ -508,7 +508,7 @@ function DoneScreen({
       <div className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-center">
         <Link
           href="/aluno/flashcards"
-          className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+          className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-vinke-line bg-white px-5 py-2.5 text-sm font-semibold text-vinke-ink2 hover:bg-vinke-offwhite dark:border-vinke-navy-line dark:bg-vinke-navy-sel dark:text-slate-200"
         >
           Voltar
         </Link>
@@ -536,9 +536,9 @@ function MiniStat({
   tone: "emerald" | "amber" | "red";
 }) {
   const colors: Record<string, string> = {
-    emerald: "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-300",
+    emerald: "border-vinke-green-soft bg-vinke-green-soft text-vinke-green-text dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-vinke-green",
     amber:
-      "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-300",
+      "border-transparent bg-vinke-amber-soft text-vinke-amber dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-300",
     red: "border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300",
   };
   return (
