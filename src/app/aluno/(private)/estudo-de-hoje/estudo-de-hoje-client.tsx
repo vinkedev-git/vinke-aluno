@@ -306,210 +306,193 @@ export default function EstudoDeHojeClient() {
         break;
     }
   }
-
   // ── Loading ────────────────────────────────────────────────────────────────
   if (loading) {
     return (
       <div className="space-y-4">
-        <div className="h-8 w-56 animate-pulse rounded-2xl bg-slate-200 dark:bg-slate-800" />
-        <div className="h-20 animate-pulse rounded-2xl bg-slate-200 dark:bg-slate-800" />
+        <div className="h-8 w-56 animate-pulse rounded-2xl bg-vinke-line2 dark:bg-vinke-navy-sel" />
+        <div className="h-24 animate-pulse rounded-2xl bg-vinke-line2 dark:bg-vinke-navy-sel" />
         {[...Array(4)].map((_, i) => <SkeletonCard key={i} lines={2} />)}
       </div>
     );
   }
 
-  const colorMap = {
-    amber:  { border: "border-amber-200 dark:border-amber-900/40",  bg: "bg-amber-50 dark:bg-amber-950/20",  icon: "from-amber-500 to-orange-500", text: "text-amber-700 dark:text-amber-300" },
-    indigo: { border: "border-indigo-200 dark:border-indigo-900/40", bg: "bg-indigo-50 dark:bg-indigo-950/20", icon: "from-indigo-500 to-blue-500",   text: "text-indigo-700 dark:text-indigo-300" },
-    rose:   { border: "border-rose-200 dark:border-rose-900/40",    bg: "bg-rose-50 dark:bg-rose-950/20",    icon: "from-rose-500 to-orange-500",   text: "text-rose-700 dark:text-rose-300" },
-    blue:   { border: "border-blue-200 dark:border-blue-900/40",    bg: "bg-blue-50 dark:bg-blue-950/20",    icon: "from-blue-500 to-cyan-500",     text: "text-blue-700 dark:text-blue-300" },
-  };
+  const questoesPct = plan && plan.dailyQuestionsGoal > 0
+    ? Math.min(100, Math.round((plan.todayAnswered / plan.dailyQuestionsGoal) * 100))
+    : 0;
+  const flashPct = plan && plan.dailyFlashcardsGoal > 0
+    ? Math.min(100, Math.round((plan.todayFlashcards / plan.dailyFlashcardsGoal) * 100))
+    : 0;
+  const dayPct = Math.round((questoesPct + flashPct) / 2);
 
-  return (
-    <div className="mx-auto max-w-2xl space-y-6">
-
-      {/* Header */}
-      <div>
-        <div className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-500">
-          {new Date().toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" })}
+  // ── Tudo concluído ─────────────────────────────────────────────────────────
+  if (allDone) {
+    return (
+      <div className="mx-auto mt-6 flex max-w-sm flex-col items-center gap-3 rounded-2xl bg-white p-8 text-center dark:border dark:border-vinke-navy-line dark:bg-vinke-navy-card">
+        <div className="relative h-[92px] w-[92px]">
+          <svg viewBox="0 0 92 92" width="92" height="92">
+            <circle cx="46" cy="46" r="39" fill="none" strokeWidth="9" className="stroke-vinke-green-soft" />
+            <circle cx="46" cy="46" r="39" fill="none" strokeWidth="9" strokeLinecap="round"
+              strokeDasharray="245 245" transform="rotate(-90 46 46)" className="stroke-vinke-green" />
+          </svg>
+          <div className="absolute inset-0 flex items-center justify-center font-display text-3xl font-bold text-vinke-green-text">✓</div>
         </div>
-        <div className="mt-0.5 text-3xl font-black text-slate-900 dark:text-slate-100">
-          Estudo de hoje
-        </div>
-        <div className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-          {allDone
-            ? "Parabéns! Você concluiu seu plano de hoje. 🎉"
-            : "Seu plano diário montado automaticamente."}
+        <span className="font-display text-xl font-bold text-vinke-ink dark:text-white">Dia completo!</span>
+        <span className="text-xs leading-relaxed text-vinke-ink2 dark:text-slate-300">
+          {plan?.todayAnswered ?? 0} questões e {plan?.todayFlashcards ?? 0} flashcards hoje. Amanhã tem mais.
+        </span>
+        <div className="mt-1 flex gap-2">
+          <button
+            type="button"
+            onClick={() => router.push("/aluno/simulados/novo?qtd=10")}
+            className="rounded-[9px] bg-vinke px-4 py-2.5 text-[11px] font-bold text-white transition hover:bg-vinke-deep"
+          >
+            Quero mais 10 questões
+          </button>
+          <button
+            type="button"
+            onClick={() => router.push("/aluno")}
+            className="rounded-[9px] border-[1.5px] border-vinke-line px-4 py-2.5 text-[11px] font-bold text-vinke-ink dark:border-vinke-navy-line dark:text-slate-200"
+          >
+            Encerrar por hoje
+          </button>
         </div>
       </div>
+    );
+  }
 
-      {/* Resumo do plano */}
-      <div className={cn(
-        "rounded-2xl border p-4",
-        allDone
-          ? "border-emerald-200 bg-emerald-50 dark:border-emerald-900/40 dark:bg-emerald-950/20"
-          : "border-slate-200 bg-white dark:border-slate-800/80 dark:bg-slate-900/50"
-      )}>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Progresso */}
-            <div className="flex items-center gap-2">
-              <div className="relative h-10 w-10">
-                <svg className="h-10 w-10 -rotate-90" viewBox="0 0 36 36">
-                  <circle cx="18" cy="18" r="14" fill="none" stroke="currentColor" strokeWidth="3"
-                    className="text-slate-200 dark:text-slate-700" />
-                  <circle cx="18" cy="18" r="14" fill="none" stroke="currentColor" strokeWidth="3"
-                    strokeDasharray={`${(doneCount / Math.max(1, blocks.length)) * 88} 88`}
-                    className={allDone ? "text-emerald-500" : "text-indigo-500"}
-                    strokeLinecap="round" />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center text-[11px] font-black text-slate-700 dark:text-slate-300">
-                  {doneCount}/{blocks.length}
-                </div>
-              </div>
-              <div>
-                <div className="text-sm font-black text-slate-900 dark:text-slate-100">
-                  {allDone ? "Tudo concluído!" : `${blocks.length - doneCount} bloco${blocks.length - doneCount > 1 ? "s" : ""} restante${blocks.length - doneCount > 1 ? "s" : ""}`}
-                </div>
-                {!allDone && (
-                  <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
-                    <Clock size={11} />
-                    ~{formatMin(totalMin)} estimados
-                  </div>
-                )}
-              </div>
-            </div>
+  return (
+    <div className="mx-auto max-w-2xl space-y-4 pb-6">
 
-            {/* Tema prioritário */}
-            {plan?.weakTheme && (
-              <div className="flex items-center gap-1.5 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-1 dark:border-amber-900/40 dark:bg-amber-950/30">
-                <Target size={12} className="text-amber-600 dark:text-amber-400" />
-                <span className="text-xs font-bold text-amber-700 dark:text-amber-300">
-                  Foco: {plan.weakTheme}
-                </span>
-              </div>
-            )}
+      {/* Header */}
+      <div className="flex flex-col gap-0.5">
+        <span className="font-display text-2xl font-bold text-vinke-ink dark:text-white">Estudo de hoje</span>
+        <span className="text-xs font-medium text-vinke-ink3">
+          {plan?.weakTheme
+            ? `Seu plano prioriza ${plan.weakTheme} — é onde você mais pode subir.`
+            : "Seu plano diário, montado automaticamente."}
+        </span>
+      </div>
+
+      {/* Resumo com anel */}
+      <div className="flex items-center gap-6 rounded-2xl bg-white p-5 dark:border dark:border-vinke-navy-line dark:bg-vinke-navy-card">
+        <div className="relative h-[86px] w-[86px] shrink-0">
+          <svg viewBox="0 0 86 86" width="86" height="86">
+            <circle cx="43" cy="43" r="36" fill="none" strokeWidth="9" className="stroke-vinke-line2 dark:stroke-vinke-navy-sel" />
+            <circle cx="43" cy="43" r="36" fill="none" strokeWidth="9" strokeLinecap="round"
+              strokeDasharray={`${(dayPct / 100) * 226} 226`} transform="rotate(-90 43 43)"
+              className="stroke-vinke" />
+          </svg>
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <span className="font-display text-xl font-bold text-vinke-ink dark:text-white">{dayPct}%</span>
+            <span className="text-[8px] font-semibold tracking-[0.1em] text-vinke-ink3">DO DIA</span>
           </div>
-
-          {/* CTA principal */}
-          {!allDone && firstPending && (
-            <Button
-              onClick={() => startBlock(firstPending)}
-              disabled={creating}
-              className="w-full gap-2 sm:w-auto"
-            >
-              <Zap size={14} />
-              {creating ? "Preparando…" : "Começar agora"}
-            </Button>
-          )}
+        </div>
+        <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:gap-6">
+          <MetaBar
+            label="QUESTÕES"
+            value={plan?.todayAnswered ?? 0}
+            goal={plan?.dailyQuestionsGoal ?? 0}
+          />
+          <MetaBar
+            label="FLASHCARDS"
+            value={plan?.todayFlashcards ?? 0}
+            goal={plan?.dailyFlashcardsGoal ?? 0}
+          />
         </div>
       </div>
 
       {/* Blocos */}
-      <div className="space-y-3">
+      <div className="space-y-2.5">
         {blocks.map((block, i) => {
-          const c = colorMap[block.color];
+          const isNext = firstPending?.id === block.id;
           return (
             <div
               key={block.id}
               className={cn(
-                "rounded-2xl border p-4 transition",
-                block.done
-                  ? "border-slate-200 bg-white opacity-60 dark:border-slate-800/80 dark:bg-slate-900/30"
-                  : cn(c.border, c.bg)
+                "flex items-center gap-3.5 rounded-[14px] bg-white p-4 dark:bg-vinke-navy-card",
+                isNext
+                  ? "border-[1.5px] border-vinke"
+                  : "dark:border dark:border-vinke-navy-line"
               )}
             >
-              <div className="flex items-start gap-3">
-                {/* Número / check */}
-                <div className={cn(
-                  "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white",
+              <span
+                className={cn(
+                  "flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[10px] font-display text-sm font-bold",
                   block.done
-                    ? "bg-emerald-500"
-                    : `bg-gradient-to-br ${c.icon}`
-                )}>
-                  {block.done
-                    ? <CheckCircle2 size={18} />
-                    : block.icon}
-                </div>
-
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-black text-slate-900 dark:text-slate-100">
-                      {block.title}
-                    </span>
-                    {!block.done && block.estimatedMin > 0 && (
-                      <span className="flex items-center gap-0.5 text-[10px] text-slate-400 dark:text-slate-500">
-                        <Clock size={10} />
-                        ~{formatMin(block.estimatedMin)}
-                      </span>
-                    )}
-                  </div>
-                  <div className={cn(
-                    "mt-0.5 text-xs",
-                    block.done ? "text-slate-400 dark:text-slate-500" : "text-slate-600 dark:text-slate-300"
-                  )}>
-                    {block.subtitle}
-                  </div>
-                </div>
-
-                {/* Botão de ação */}
-                <button
-                  type="button"
-                  disabled={creating}
-                  onClick={() => startBlock(block)}
+                    ? "bg-vinke-green-soft text-vinke-green-text dark:bg-vinke-green/15 dark:text-vinke-green"
+                    : isNext
+                      ? "bg-vinke-soft text-vinke dark:bg-vinke/15 dark:text-vinke-lav"
+                      : "bg-vinke-line2 text-vinke-ink2 dark:bg-vinke-navy dark:text-slate-300"
+                )}
+              >
+                {block.done ? "✓" : i + 1}
+              </span>
+              <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                <span
                   className={cn(
-                    "flex shrink-0 items-center gap-1 rounded-xl border px-3 py-1.5 text-xs font-bold transition",
+                    "truncate text-[13px] font-bold",
                     block.done
-                      ? "border-slate-200 bg-white text-slate-400 dark:border-slate-700 dark:bg-slate-900"
-                      : cn(
-                          "text-white",
-                          block.color === "amber"  && "border-amber-500 bg-gradient-to-r from-amber-500 to-orange-500",
-                          block.color === "indigo" && "border-indigo-500 bg-gradient-to-r from-indigo-500 to-blue-500",
-                          block.color === "rose"   && "border-rose-500 bg-gradient-to-r from-rose-500 to-orange-500",
-                          block.color === "blue"   && "border-blue-500 bg-gradient-to-r from-blue-500 to-cyan-500"
-                        )
+                      ? "text-vinke-ink3 line-through"
+                      : "text-vinke-ink dark:text-slate-100"
                   )}
                 >
-                  {block.action}
-                  {!block.done && <ChevronRight size={12} />}
-                </button>
+                  {block.title}
+                </span>
+                <span
+                  className={cn(
+                    "truncate text-[11px] font-medium",
+                    block.done ? "text-vinke-green-text dark:text-vinke-green" : "text-vinke-ink3"
+                  )}
+                >
+                  {block.subtitle}
+                  {!block.done && block.estimatedMin > 0 ? ` · ~${formatMin(block.estimatedMin)}` : ""}
+                </span>
               </div>
-
-              {/* Número de ordem quando pendente */}
-              {!block.done && (
-                <div className="mt-2 flex items-center gap-1.5">
-                  <span className="text-[10px] font-bold uppercase tracking-wide text-slate-400 dark:text-slate-500">
-                    Bloco {i + 1 - doneCount} de {blocks.length - doneCount}
-                  </span>
-                </div>
-              )}
+              <button
+                type="button"
+                onClick={() => void startBlock(block)}
+                disabled={creating}
+                className={cn(
+                  "shrink-0 rounded-[9px] px-4 py-2 text-[11px] font-bold transition disabled:opacity-60",
+                  block.done
+                    ? "text-vinke-ink3 hover:text-vinke-ink dark:hover:text-slate-200"
+                    : isNext
+                      ? "bg-vinke text-white hover:bg-vinke-deep"
+                      : "border-[1.5px] border-vinke-line text-vinke-ink hover:bg-vinke-offwhite dark:border-vinke-navy-line dark:text-slate-200 dark:hover:bg-vinke-navy-sel"
+                )}
+              >
+                {creating && isNext ? "Preparando…" : block.action}
+              </button>
             </div>
           );
         })}
       </div>
+    </div>
+  );
+}
 
-      {/* Estado vazio — sem dados */}
-      {!plan && (
-        <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center dark:border-slate-800/80 dark:bg-slate-900/50">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 dark:bg-slate-800">
-            <Sparkles size={24} className="text-slate-400" />
-          </div>
-          <div className="mt-3 text-base font-black text-slate-900 dark:text-slate-100">
-            Ainda não temos seu plano
-          </div>
-          <div className="mx-auto mt-1 max-w-sm text-sm text-slate-500 dark:text-slate-400">
-            Responda algumas questões ou configure suas metas diárias para montar o Estudo de Hoje.
-          </div>
-          <Button className="mt-4 gap-2" onClick={() => router.push("/aluno/configuracoes")}>
-            <Target size={14} />
-            Configurar metas
-          </Button>
-        </div>
-      )}
-
-      {/* Nota de rodapé */}
-      <div className="text-center text-xs text-slate-400 dark:text-slate-600">
-        O plano é recalculado automaticamente conforme você estuda.
+function MetaBar({ label, value, goal }: { label: string; value: number; goal: number }) {
+  const done = goal > 0 && value >= goal;
+  const pct = goal > 0 ? Math.min(100, Math.round((value / goal) * 100)) : 0;
+  return (
+    <div className="flex min-w-0 flex-1 flex-col gap-1">
+      <span className="text-[10px] font-semibold tracking-[0.1em] text-vinke-ink3">{label}</span>
+      <span
+        className={cn(
+          "font-display text-xl font-bold [font-variant-numeric:tabular-nums]",
+          done ? "text-vinke-green-text dark:text-vinke-green" : "text-vinke-ink dark:text-white"
+        )}
+      >
+        {value}
+        <span className="text-[13px] font-medium text-vinke-ink3">/{goal}</span>
+        {done ? " ✓" : ""}
+      </span>
+      <div className={cn("h-1.5 rounded-full", done ? "bg-vinke-green-soft" : "bg-vinke-line2 dark:bg-vinke-navy-sel")}>
+        <div
+          className={cn("h-1.5 rounded-full", done ? "bg-vinke-green" : "bg-vinke")}
+          style={{ width: `${pct}%` }}
+        />
       </div>
     </div>
   );
