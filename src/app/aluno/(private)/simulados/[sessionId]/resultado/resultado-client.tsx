@@ -17,6 +17,7 @@ import {
 type AnswerItem = { selectedOptionId?: string; isCorrect?: boolean };
 
 type SessionDoc = {
+  timeSpentMs?: number;
   id: string;
   status?: "in_progress" | "completed";
   totalQuestions?: number;
@@ -349,6 +350,13 @@ export default function ResultadoClient({ sessionId }: { sessionId: string }) {
             <span className="text-xs font-medium text-vinke-ink3">
               {stats.correct} acertos de {stats.answered} respondidas
               {stats.blank > 0 ? ` · ${stats.blank} em branco` : ""}
+              {(() => {
+                const ms = Number(session?.timeSpentMs ?? 0);
+                if (ms < 60_000) return "";
+                const h = Math.floor(ms / 3_600_000);
+                const m = Math.round((ms % 3_600_000) / 60_000);
+                return ` · tempo total ${h > 0 ? `${h}h${String(m).padStart(2, "0")}` : `${m} min`}`;
+              })()}
             </span>
           </div>
           {previousScores.length > 0 ? (

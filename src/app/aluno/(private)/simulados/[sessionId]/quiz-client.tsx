@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { auth, db } from "@/lib/firebase";
 import {
@@ -8,6 +8,7 @@ import {
   collection,
   doc,
   getDoc,
+  increment,
   runTransaction,
   serverTimestamp,
   updateDoc,
@@ -21,6 +22,7 @@ import { ChevronLeft, ChevronRight, CheckCircle2, XCircle, AlertCircle, Flag } f
 import { SkeletonCard } from "@/components/ui/skeleton";
 
 type SessionDoc = {
+  timeSpentMs?: number;
   id: string;
   status?: "in_progress" | "completed";
   questionIds?: unknown;
@@ -371,6 +373,11 @@ export default function QuizClient({ sessionId }: { sessionId: string }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFinishing, setIsFinishing] = useState(false);
 
+  // Cronômetro — tempo total do simulado (persistido em timeSpentMs)
+  const [clockMs, setClockMs] = useState(0);
+  const clockBaseRef = useRef(0);
+  const segStartRef = useRef(Date.now());
+
   // reportar erro
   const [reportOpen, setReportOpen] = useState(false);
   const [reportText, setReportText] = useState("");
@@ -413,6 +420,35 @@ export default function QuizClient({ sessionId }: { sessionId: string }) {
   useEffect(() => {
     return () => clearHeader();
   }, [clearHeader]);
+
+  useEffect(() => {
+    if (!session) return;
+    clockBaseRef.current = Number(session.timeSpentMs ?? 0);
+    segStartRef.current = Date.now();
+    setClockMs(clockBaseRef.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.id]);
+
+  useEffect(() => {
+    if (isReviewMode) return;
+    const t = setInterval(() => {
+      setClockMs(clockBaseRef.current + (Date.now() - segStartRef.current));
+    }, 1000);
+    return () => clearInterval(t);
+  }, [isReviewMode]);
+
+  const flushClock = useCallback(() => {
+    if (isReviewMode) return;
+    const u = auth.currentUser;
+    if (!u) return;
+    const delta = Date.now() - segStartRef.current;
+    if (delta < 500) return;
+    segStartRef.current = Date.now();
+    clockBaseRef.current += delta;
+    updateDoc(doc(db, "users", u.uid, "sessions", sessionId), {
+      timeSpentMs: increment(delta),
+    }).catch(() => { /* cronômetro é best-effort */ });
+  }, [isReviewMode, sessionId]);
   const currentSavedAnswer = useMemo(() => {
     if (!session || !currentQuestion) return null;
     const saved = session.answersMap?.[currentQuestion.id];
@@ -567,6 +603,7 @@ export default function QuizClient({ sessionId }: { sessionId: string }) {
   async function persistIndex(nextIndex: number) {
     const u = auth.currentUser;
     if (!u) return;
+    flushClock();
 
     try {
       await updateDoc(doc(db, "users", u.uid, "sessions", sessionId), {
@@ -672,6 +709,7 @@ export default function QuizClient({ sessionId }: { sessionId: string }) {
       setConfirmed(true);
       setSelectedOptionId(result.selectedOptionId || null);
       setIsCorrect(result.isCorrect);
+      flushClock();
     } catch (e) {
       console.error(e);
       setErr("Não foi possível confirmar sua resposta.");
@@ -714,6 +752,7 @@ export default function QuizClient({ sessionId }: { sessionId: string }) {
 
     setIsFinishing(true);
     try {
+      flushClock();
       await updateDoc(doc(db, "users", u.uid, "sessions", sessionId), {
         status: "completed",
         updatedAt: serverTimestamp(),
@@ -825,6 +864,15 @@ export default function QuizClient({ sessionId }: { sessionId: string }) {
 
   const provaBadge = safeStr((currentQuestion as { examSource?: unknown }).examSource).replace(/[()]/g, "").replace("-", " ");
 
+  const clockLabel = (() => {
+    const totalS = Math.floor(clockMs / 1000);
+    const h = Math.floor(totalS / 3600);
+    const m = Math.floor((totalS % 3600) / 60);
+    const sec = totalS % 60;
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return h > 0 ? `${pad(h)}:${pad(m)}:${pad(sec)}` : `${pad(m)}:${pad(sec)}`;
+  })();
+
   // Matéria da questão: disciplina > primeiro assunto > área (nome curto)
   const materiaBadge = (() => {
     const q = currentQuestion as {
@@ -863,7 +911,12 @@ export default function QuizClient({ sessionId }: { sessionId: string }) {
                 Modo revisão
               </span>
             ) : (
-              <span className="font-display font-bold text-vinke-ink dark:text-white">{progressPct}%</span>
+              <span className="flex items-center gap-2.5">
+                <span className="rounded-[8px] bg-vinke-navy px-2.5 py-1 font-display text-[12px] font-bold text-white [font-variant-numeric:tabular-nums] dark:bg-white dark:text-vinke-navy">
+                  {clockLabel}
+                </span>
+                <span className="font-display font-bold text-vinke-ink dark:text-white">{progressPct}%</span>
+              </span>
             )}
           </div>
           <div className="h-2 w-full overflow-hidden rounded-full bg-vinke-line2 dark:bg-vinke-navy-sel">

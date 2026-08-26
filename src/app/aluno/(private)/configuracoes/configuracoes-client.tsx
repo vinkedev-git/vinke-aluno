@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { auth, db } from "@/lib/firebase";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
-import { Settings2, CheckCircle2, Target, Zap, Clock } from "lucide-react";
+import { Settings2, CheckCircle2, Target, Zap } from "lucide-react";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -155,15 +155,6 @@ export default function ConfiguracoesClient() {
             value={form.dailyFlashcardsGoal}
             min={1} max={50}
             onChange={(v) => setNum("dailyFlashcardsGoal", v, 1, 50)}
-          />
-          {/* Minutos */}
-          <GoalRow
-            label="Minutos de estudo"
-            icon={<Clock size={14} className="text-vinke-green" />}
-            hint="Tempo estimado (calculado automaticamente)"
-            value={form.dailyMinutesGoal}
-            min={5} max={180}
-            onChange={(v) => setNum("dailyMinutesGoal", v, 5, 180)}
           />
         </div>
       </div>
