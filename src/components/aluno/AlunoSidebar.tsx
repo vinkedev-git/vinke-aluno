@@ -1,9 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
+import { VinkeSymbol } from "@/components/VinkeLogo";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useAlunoTheme } from "@/components/aluno/AlunoThemeProvider";
@@ -69,8 +68,8 @@ function Item({
       className={cn(
         "group flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold transition",
         active
-          ? "bg-slate-900 text-white shadow-[0_10px_30px_rgba(15,23,42,0.25)] dark:bg-gradient-to-r dark:from-blue-500 dark:to-indigo-500 dark:text-white dark:shadow-[0_20px_45px_rgba(37,99,235,0.35)]"
-          : "text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800/70 dark:hover:text-slate-100"
+          ? "bg-vinke font-bold text-white shadow-[0_10px_30px_rgba(98,54,240,0.25)]"
+          : "text-vinke-ink2 hover:bg-vinke-soft hover:text-vinke-ink dark:text-slate-400 dark:hover:bg-vinke-navy-sel dark:hover:text-slate-100"
       )}
     >
       <Icon
@@ -87,7 +86,7 @@ function Item({
             "ml-auto shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide",
             active
               ? "bg-white/20 text-white"
-              : "bg-gradient-to-r from-blue-500 to-indigo-500 text-white"
+              : "bg-vinke text-white"
           )}
         >
           {badge}
@@ -106,7 +105,6 @@ export default function AlunoSidebar({
 }) {
   const router = useRouter();
   const { theme, setTheme } = useAlunoTheme();
-  const [logoError, setLogoError] = useState(false);
 
   const logout = async () => {
     await signOut(auth);
@@ -119,35 +117,22 @@ export default function AlunoSidebar({
   return (
     <aside
       className={cn(
-        "shrink-0 bg-white text-slate-900 flex flex-col dark:bg-[#030b21] dark:text-slate-100",
+        "shrink-0 bg-white text-vinke-ink flex flex-col dark:bg-vinke-navy-deep dark:text-slate-100",
         isDrawer
           ? "h-full w-full"
-          : "hidden lg:flex w-[260px] min-h-screen sticky top-0 border-r border-slate-200 dark:border-slate-800/80"
+          : "hidden lg:flex w-[260px] min-h-screen sticky top-0 border-r border-vinke-line dark:border-vinke-navy-line"
       )}
     >
       {/* Brand */}
-      <div className="px-5 py-5 border-b border-slate-200 dark:border-slate-800/80">
-        <div className="flex items-center gap-3">
-          <div className="h-11 w-11 rounded-2xl overflow-hidden bg-slate-900 text-white flex items-center justify-center font-black dark:border dark:border-slate-700/80 dark:bg-[#061738] dark:text-blue-300">
-            {!logoError ? (
-              <Image
-                src="/logo.png"
-                alt="Logo Vinke"
-                width={44}
-                height={44}
-                className="h-[80%] w-[80%] object-contain"
-                onError={() => setLogoError(true)}
-              />
-            ) : (
-              "AQ"
-            )}
-          </div>
-          <div className="min-w-0">
-            <div className="text-sm font-black text-slate-900 truncate dark:text-slate-100">
-              Vinke
-            </div>
-            <div className="text-xs text-slate-500 dark:text-slate-400">Área do Aluno</div>
-          </div>
+      <div className="px-5 py-5 border-b border-vinke-line2 dark:border-vinke-navy-line">
+        <div className="flex items-center gap-2">
+          <VinkeSymbol size={22} className="text-vinke dark:text-white" />
+          <span className="font-display text-lg font-bold tracking-[0.01em] text-vinke-ink dark:text-white">
+            VINKE
+          </span>
+          <span className="mt-[3px] text-[9px] font-semibold tracking-[0.16em] text-vinke-ink3">
+            ALUNO
+          </span>
         </div>
       </div>
 
@@ -166,9 +151,9 @@ export default function AlunoSidebar({
         <Item href="/aluno/configuracoes" label="Metas diárias" Icon={Settings2} onNavigate={onNavigate} />
       </nav>
 
-      <div className="mt-auto space-y-3 border-t border-slate-200 bg-white px-4 py-4 dark:border-slate-800/80 dark:bg-[#030b21]">
+      <div className="mt-auto space-y-3 border-t border-vinke-line2 bg-white px-4 py-4 dark:border-vinke-navy-line dark:bg-vinke-navy-deep">
         {/* Theme toggle */}
-        <div className="rounded-2xl border border-slate-200 p-2 dark:border-slate-800/80 dark:bg-[#04102a]">
+        <div className="rounded-2xl border border-vinke-line p-2 dark:border-vinke-navy-line dark:bg-vinke-navy">
           <div className="mb-2 px-2 text-[10px] font-bold tracking-[0.22em] text-slate-400 dark:text-slate-600 uppercase">
             Tema
           </div>
@@ -192,7 +177,7 @@ export default function AlunoSidebar({
               className={cn(
                 "flex items-center justify-center gap-2 rounded-xl border px-3 py-2 text-sm font-semibold transition",
                 theme === "dark"
-                  ? "border-blue-400/40 bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-[0_10px_30px_rgba(37,99,235,0.35)]"
+                  ? "border-vinke/40 bg-vinke text-white shadow-[0_10px_30px_rgba(98,54,240,0.35)]"
                   : "border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:bg-slate-800"
               )}
             >

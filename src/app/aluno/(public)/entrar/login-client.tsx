@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -8,6 +7,7 @@ import {
   signOut,
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
+import { VinkeSymbol } from "@/components/VinkeLogo";
 
 function mapErroToMessage(code: string) {
   switch (code) {
@@ -116,43 +116,50 @@ export default function LoginClient() {
   const showNoAccessActions = erro === "sem_acesso";
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(1200px_circle_at_20%_0%,rgba(56,189,248,0.16),transparent_45%),radial-gradient(1000px_circle_at_100%_20%,rgba(37,99,235,0.20),transparent_42%),linear-gradient(180deg,#020817_0%,#071235_100%)] p-4 sm:p-6">
+    <div className="min-h-screen bg-vinke-offwhite p-4 sm:p-6 dark:bg-vinke-navy">
       <div className="mx-auto flex min-h-screen w-full max-w-5xl items-center justify-center">
-        <div className="grid w-full overflow-hidden rounded-3xl border border-blue-200/15 bg-white/95 shadow-[0_25px_80px_rgba(2,6,23,0.45)] backdrop-blur md:grid-cols-[1.1fr_1fr] dark:border-blue-300/20 dark:bg-[#020b23]/90">
-          <div className="relative hidden flex-col justify-between overflow-hidden border-r border-blue-200/20 p-8 md:flex dark:border-blue-300/15">
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(900px_circle_at_20%_0%,rgba(56,189,248,0.23),transparent_55%),radial-gradient(700px_circle_at_100%_80%,rgba(37,99,235,0.26),transparent_50%)]" />
+        <div className="grid w-full overflow-hidden rounded-3xl border border-vinke-line/80 bg-white shadow-[0_25px_80px_rgba(11,10,33,0.10)] md:grid-cols-[1.1fr_1fr] dark:border-vinke-navy-line dark:bg-vinke-navy-card">
+          <div className="relative hidden flex-col justify-between overflow-hidden border-r border-vinke-line2 p-8 md:flex dark:border-vinke-navy-line">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(900px_circle_at_18%_0%,rgba(98,54,240,0.07),transparent_55%),radial-gradient(700px_circle_at_100%_85%,rgba(98,54,240,0.09),transparent_50%)]" />
 
             {/* Brand topo */}
-            <div className="relative z-10 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#071a3f] shadow-lg">
-                <Image src="/logo-icon.png" alt="Logo" width={28} height={28} className="h-7 w-7 object-contain" />
-              </div>
-              <div className="text-sm font-black text-slate-900 dark:text-slate-100">Vinke</div>
+            <div className="relative z-10 flex items-center gap-2">
+              <VinkeSymbol size={22} />
+              <span className="font-display text-lg font-bold tracking-[0.01em] text-vinke-ink dark:text-white">
+                VINKE
+              </span>
             </div>
 
             {/* Hero central */}
             <div className="relative z-10 flex flex-col items-center py-6 text-center">
-              <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-3xl bg-[#071a3f] shadow-[0_20px_60px_rgba(37,99,235,0.4)]">
-                <Image src="/logo.png" alt="Vinke" width={80} height={80} className="h-16 w-16 object-contain" />
+              <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-3xl bg-vinke-navy shadow-[0_20px_60px_rgba(98,54,240,0.30)]">
+                <VinkeSymbol size={52} className="text-white" />
               </div>
-              <h1 className="text-2xl font-black leading-tight text-slate-900 dark:text-slate-100">
-                Estude com foco.<br />Evolua com dados.
+              <h1 className="font-display text-2xl font-bold leading-tight text-vinke-ink dark:text-white">
+                Entre para continuar
+                <br />
+                evoluindo.
               </h1>
-              <p className="mt-3 text-sm leading-6 text-slate-500 dark:text-slate-400">
-                Simulados personalizados, diagnóstico por tema<br />e acompanhamento de desempenho em tempo real.
+              <p className="mt-3 text-sm leading-6 text-vinke-ink3">
+                Questões, simulados e dados que mostram
+                <br />
+                exatamente onde você precisa evoluir.
               </p>
             </div>
 
             {/* Features */}
             <div className="relative z-10 space-y-2">
               {[
-                { icon: "🧠", text: "+3.500 questões comentadas" },
-                { icon: "📊", text: "Dashboard de desempenho por tema" },
-                { icon: "🎯", text: "Simulados ME1, ME2, ME3, TEA e TSA" },
+                { icon: "✓", text: "Questões oficiais do ENEM comentadas" },
+                { icon: "📊", text: "Estatísticas por área, disciplina e assunto" },
+                { icon: "🎯", text: "Simulados no formato real da prova" },
               ].map((f) => (
-                <div key={f.text} className="flex items-center gap-3 rounded-2xl border border-blue-200/20 bg-white/60 px-4 py-3 dark:border-blue-300/10 dark:bg-[#081937]/60">
+                <div
+                  key={f.text}
+                  className="flex items-center gap-3 rounded-2xl bg-vinke-offwhite px-4 py-3 dark:bg-vinke-navy"
+                >
                   <span className="text-base">{f.icon}</span>
-                  <span className="text-sm font-semibold text-slate-800 dark:text-slate-200">{f.text}</span>
+                  <span className="text-sm font-semibold text-vinke-ink2 dark:text-slate-200">{f.text}</span>
                 </div>
               ))}
             </div>
@@ -160,67 +167,71 @@ export default function LoginClient() {
 
           <div className="p-5 sm:p-7 md:p-8">
             <div className="mb-5 flex items-center gap-3 md:hidden">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-blue-200/30 bg-[#071a3f]">
-                <Image src="/logo.png" alt="Logo Vinke" width={38} height={38} className="h-9 w-9 object-contain" />
-              </div>
+              <VinkeSymbol size={32} />
               <div>
-                <div className="text-lg font-black text-slate-900 dark:text-slate-100">Vinke</div>
-                <div className="text-xs font-semibold text-slate-500 dark:text-slate-400">Área do Aluno</div>
+                <div className="font-display text-lg font-bold tracking-[0.01em] text-vinke-ink dark:text-white">
+                  VINKE
+                </div>
+                <div className="text-xs font-semibold text-vinke-ink3">Área do Aluno</div>
               </div>
             </div>
 
             <div className="mb-6">
-              <div className="text-[11px] font-bold tracking-[0.18em] text-slate-500 dark:text-slate-400">ACESSO DO ALUNO</div>
-              <div className="mt-1 text-2xl font-black text-slate-900 dark:text-slate-100">Entrar na plataforma</div>
+              <div className="text-[11px] font-bold tracking-[0.18em] text-vinke dark:text-vinke-lav">
+                ACESSO DO ALUNO
+              </div>
+              <div className="mt-1 font-display text-2xl font-bold text-vinke-ink dark:text-white">
+                Entrar na plataforma
+              </div>
             </div>
 
             <form onSubmit={onLogin} className="space-y-4">
               {erroMsg ? (
-                <div className="rounded-2xl border border-amber-300/60 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-400/30 dark:bg-amber-500/10 dark:text-amber-200">
+                <div className="rounded-2xl bg-vinke-amber-soft px-4 py-3 text-sm text-vinke-amber dark:bg-vinke-amber/10 dark:text-vinke-amber-bar">
                   {erroMsg}
                 </div>
               ) : null}
 
               {uiError ? (
-                <div className="rounded-2xl border border-rose-300/60 bg-rose-50 px-4 py-3 text-sm text-rose-800 dark:border-rose-400/30 dark:bg-rose-500/10 dark:text-rose-200">
+                <div className="rounded-2xl bg-vinke-red-soft px-4 py-3 text-sm text-vinke-red dark:bg-vinke-red/10 dark:text-vinke-red-dark">
                   {uiError}
                 </div>
               ) : null}
 
               {uiInfo ? (
-                <div className="rounded-2xl border border-emerald-300/60 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-400/30 dark:bg-emerald-500/10 dark:text-emerald-200">
+                <div className="rounded-2xl bg-vinke-green-soft px-4 py-3 text-sm text-vinke-green-text dark:bg-vinke-green/10 dark:text-vinke-green">
                   {uiInfo}
                 </div>
               ) : null}
 
               <div>
-                <div className="mb-1 text-xs font-semibold text-slate-700 dark:text-slate-300">E-mail</div>
+                <div className="mb-1 text-xs font-bold text-vinke-ink dark:text-slate-200">E-mail</div>
                 <input
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   type="email"
                   autoComplete="email"
                   placeholder="seuemail@dominio.com"
-                  className="h-12 w-full rounded-2xl border border-slate-300 bg-white px-4 text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-200/40 dark:border-slate-600 dark:bg-[#0a1737] dark:text-slate-100 dark:placeholder:text-slate-400 dark:focus:border-blue-400 dark:focus:ring-blue-500/30"
+                  className="h-12 w-full rounded-[9px] border-[1.5px] border-vinke-line bg-white px-4 text-sm font-medium text-vinke-ink outline-none transition placeholder:text-vinke-ink3 focus:border-vinke focus:ring-[3px] focus:ring-vinke-ring dark:border-vinke-navy-line dark:bg-vinke-navy dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-vinke-lav dark:focus:ring-vinke/30"
                 />
               </div>
 
               <div>
-                <div className="mb-1 text-xs font-semibold text-slate-700 dark:text-slate-300">Senha</div>
+                <div className="mb-1 text-xs font-bold text-vinke-ink dark:text-slate-200">Senha</div>
                 <input
                   value={senha}
                   onChange={(e) => setSenha(e.target.value)}
                   type="password"
                   autoComplete="current-password"
                   placeholder="Digite sua senha"
-                  className="h-12 w-full rounded-2xl border border-slate-300 bg-white px-4 text-sm font-medium text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-200/40 dark:border-slate-600 dark:bg-[#0a1737] dark:text-slate-100 dark:placeholder:text-slate-400 dark:focus:border-blue-400 dark:focus:ring-blue-500/30"
+                  className="h-12 w-full rounded-[9px] border-[1.5px] border-vinke-line bg-white px-4 text-sm font-medium text-vinke-ink outline-none transition placeholder:text-vinke-ink3 focus:border-vinke focus:ring-[3px] focus:ring-vinke-ring dark:border-vinke-navy-line dark:bg-vinke-navy dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-vinke-lav dark:focus:ring-vinke/30"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-3 text-sm font-bold text-white shadow-[0_18px_40px_rgba(37,99,235,0.35)] transition hover:from-blue-500 hover:to-indigo-500 disabled:opacity-60"
+                className="w-full rounded-[9px] bg-vinke px-4 py-3 text-sm font-bold text-white shadow-[0_18px_40px_rgba(98,54,240,0.28)] transition hover:bg-vinke-deep disabled:opacity-60"
               >
                 {loading ? "Entrando..." : "Entrar"}
               </button>
@@ -230,7 +241,7 @@ export default function LoginClient() {
                   type="button"
                   onClick={onForgotPassword}
                   disabled={loading}
-                  className="text-sm font-semibold text-slate-700 transition hover:text-slate-900 hover:underline disabled:opacity-60 dark:text-slate-200 dark:hover:text-white"
+                  className="text-sm font-semibold text-vinke transition hover:text-vinke-deep hover:underline disabled:opacity-60 dark:text-vinke-lav"
                 >
                   Esqueci minha senha
                 </button>
@@ -240,14 +251,14 @@ export default function LoginClient() {
                     type="button"
                     onClick={onLogout}
                     disabled={loading}
-                    className="text-sm font-semibold text-slate-700 transition hover:text-slate-900 hover:underline disabled:opacity-60 dark:text-slate-200 dark:hover:text-white"
+                    className="text-sm font-semibold text-vinke-ink2 transition hover:text-vinke-ink hover:underline disabled:opacity-60 dark:text-slate-200 dark:hover:text-white"
                   >
                     Sair / Trocar conta
                   </button>
                 ) : null}
               </div>
 
-              <div className="rounded-2xl border border-slate-200/80 bg-slate-50/80 px-3 py-2 text-xs text-slate-600 dark:border-slate-700/80 dark:bg-[#0a1737]/65 dark:text-slate-300">
+              <div className="rounded-2xl bg-vinke-offwhite px-3 py-2 text-xs text-vinke-ink2 dark:bg-vinke-navy dark:text-slate-300">
                 Dica: se você recebeu o e-mail “Crie sua senha”, você também pode usar “Esqueci minha senha”.
               </div>
             </form>
