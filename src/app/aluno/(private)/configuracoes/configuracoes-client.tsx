@@ -36,7 +36,9 @@ const DAYS = [
   { key: "domingo", label: "Dom" },
 ];
 
-const EXAM_OPTIONS = ["ME1", "ME2", "ME3", "TEA", "TSA", "Outro"];
+// Alvo do aluno: o ENEM do ano corrente, o do ano seguinte, ou outro vestibular.
+const ANO_ATUAL = new Date().getFullYear();
+const EXAM_OPTIONS = [`ENEM ${ANO_ATUAL}`, `ENEM ${ANO_ATUAL + 1}`, "Outro vestibular"];
 
 function cn(...xs: Array<string | false | null | undefined>) {
   return xs.filter(Boolean).join(" ");
