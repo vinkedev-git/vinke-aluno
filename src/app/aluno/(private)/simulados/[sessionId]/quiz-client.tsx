@@ -825,6 +825,24 @@ export default function QuizClient({ sessionId }: { sessionId: string }) {
 
   const provaBadge = safeStr((currentQuestion as { examSource?: unknown }).examSource).replace(/[()]/g, "").replace("-", " ");
 
+  // Matéria da questão: disciplina > primeiro assunto > área (nome curto)
+  const materiaBadge = (() => {
+    const q = currentQuestion as {
+      disciplina?: unknown;
+      assuntos?: unknown;
+      themes?: unknown;
+      area?: unknown;
+    };
+    const disciplina = safeStr(q.disciplina);
+    if (disciplina) return disciplina;
+    const assuntos = Array.isArray(q.assuntos) ? q.assuntos : Array.isArray(q.themes) ? q.themes : [];
+    const assunto = safeStr(assuntos[0]);
+    if (assunto) return assunto;
+    const area = safeStr(q.area);
+    if (area) return area.split(",")[0].split(" e suas")[0];
+    return "";
+  })();
+
   return (
     <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
 
@@ -861,10 +879,19 @@ export default function QuizClient({ sessionId }: { sessionId: string }) {
 
           {/* Enunciado */}
           <div className="border-b border-vinke-line2 px-6 py-5 dark:border-vinke-navy-line">
-            {provaBadge ? (
-              <span className="mb-2 inline-block rounded-full bg-vinke-line2 px-2.5 py-0.5 text-[10px] font-bold text-vinke-ink2 dark:bg-vinke-navy dark:text-slate-300">
-                {provaBadge}
-              </span>
+            {materiaBadge || provaBadge ? (
+              <div className="mb-2.5 flex flex-wrap gap-1.5">
+                {materiaBadge ? (
+                  <span className="rounded-full bg-vinke-soft px-2.5 py-0.5 text-[10px] font-bold text-vinke dark:bg-vinke/15 dark:text-vinke-lav">
+                    {materiaBadge}
+                  </span>
+                ) : null}
+                {provaBadge ? (
+                  <span className="rounded-full bg-vinke-line2 px-2.5 py-0.5 text-[10px] font-bold text-vinke-ink2 dark:bg-vinke-navy dark:text-slate-300">
+                    {provaBadge}
+                  </span>
+                ) : null}
+              </div>
             ) : null}
             <div
               className="text-[15px] leading-7 text-vinke-ink dark:text-slate-100 [&_p]:my-2 [&_img]:max-w-full [&_img]:rounded-xl [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:underline"
