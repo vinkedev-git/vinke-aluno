@@ -1,21 +1,21 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Manrope, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import StagingBanner from "@/components/StagingBanner";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const manrope = Manrope({
+  variable: "--font-manrope",
   subsets: ["latin"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-space-grotesk",
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
   title: "Vinke | Portal do Aluno",
-  description: "Portal do aluno para simulados, desempenho e acompanhamento de estudos em anestesiologia.",
+  description: "Questões, simulados e estatísticas para você evoluir até o ENEM.",
   icons: {
     icon: [{ url: "/logo-icon.png", type: "image/png" }],
     shortcut: "/logo-icon.png",
@@ -66,7 +66,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${manrope.variable} ${spaceGrotesk.variable} font-sans antialiased`}
       >
         <StagingBanner />
         {children}
