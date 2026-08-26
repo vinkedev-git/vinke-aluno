@@ -308,8 +308,8 @@ export default function FlashcardsClient() {
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar deck por tema... ex: pediatria, obstetrícia, dor"
-              className="w-full rounded-2xl border border-vinke-line bg-white py-2.5 pl-10 pr-4 text-sm text-vinke-ink placeholder:text-vinke-ink4 focus:border-vinke focus:outline-none focus:ring-2 focus:ring-blue-100 dark:border-vinke-navy-line dark:bg-vinke-navy-card dark:text-slate-200 dark:focus:border-blue-600 dark:focus:ring-blue-950"
+              placeholder="Buscar deck por assunto… ex: funções, ecologia, era Vargas"
+              className="w-full rounded-2xl border border-vinke-line bg-white py-2.5 pl-10 pr-4 text-sm text-vinke-ink placeholder:text-vinke-ink4 focus:border-vinke focus:outline-none focus:ring-[3px] focus:ring-vinke-ring dark:border-vinke-navy-line dark:bg-vinke-navy-card dark:text-slate-200 dark:focus:border-vinke-lav dark:focus:ring-vinke/30"
             />
           </div>
         )}

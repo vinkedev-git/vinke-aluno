@@ -68,26 +68,24 @@ function RedefinirSenhaContent() {
   };
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(1200px_circle_at_20%_0%,rgba(56,189,248,0.16),transparent_45%),radial-gradient(1000px_circle_at_100%_20%,rgba(37,99,235,0.20),transparent_42%),linear-gradient(180deg,#020817_0%,#071235_100%)] flex items-center justify-center p-4">
+    <div className="flex min-h-screen items-center justify-center bg-vinke-offwhite p-4 dark:bg-vinke-navy">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="mb-8 flex flex-col items-center gap-3">
-          <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl shadow-lg">
-            <Image src="/logo-icon.png" alt="Vinke" width={56} height={56} />
-          </div>
-          <span className="text-sm font-semibold tracking-widest text-blue-300/80 uppercase">
-            Vinke
+          <Image src="/logo-icon.png" alt="Vinke" width={52} height={52} className="rounded-2xl" />
+          <span className="font-display text-lg font-bold tracking-[0.01em] text-vinke-ink dark:text-white">
+            VINKE
           </span>
         </div>
 
-        <div className="rounded-3xl border border-blue-200/15 bg-white/95 shadow-[0_25px_80px_rgba(2,6,23,0.45)] backdrop-blur dark:border-blue-300/20 dark:bg-[#020b23]/90">
+        <div className="rounded-3xl bg-white shadow-[0_16px_48px_rgba(11,10,33,0.08)] dark:border dark:border-vinke-navy-line dark:bg-vinke-navy-card">
           <div className="p-8">
 
             {/* Loading */}
             {stage === "loading" && (
               <div className="flex flex-col items-center gap-4 py-8">
-                <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-200 border-t-blue-600" />
-                <p className="text-sm text-slate-500">Verificando link...</p>
+                <div className="h-10 w-10 animate-spin rounded-full border-4 border-vinke-ring border-t-vinke" />
+                <p className="text-sm text-vinke-ink3">Verificando link...</p>
               </div>
             )}
 
@@ -95,41 +93,41 @@ function RedefinirSenhaContent() {
             {stage === "form" && (
               <form onSubmit={(e) => void onSubmit(e)} className="space-y-5">
                 <div>
-                  <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+                  <h1 className="font-display text-2xl font-bold text-vinke-ink dark:text-white">
                     Nova senha
                   </h1>
                   {email && (
-                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-                      Conta: <span className="font-medium text-slate-700 dark:text-slate-300">{email}</span>
+                    <p className="mt-1 text-sm text-vinke-ink3">
+                      Conta: <span className="font-medium text-vinke-ink2 dark:text-slate-300">{email}</span>
                     </p>
                   )}
                 </div>
 
                 {errorMsg && (
-                  <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-400">
+                  <div className="flex items-start gap-2 rounded-xl border border-transparent bg-vinke-red-soft px-4 py-3 text-sm text-vinke-red dark:bg-vinke-red/10 dark:text-vinke-red-dark">
                     <XCircle size={16} className="mt-0.5 shrink-0" />
                     {errorMsg}
                   </div>
                 )}
 
                 <div>
-                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-slate-400">
+                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-vinke-ink3">
                     Nova senha
                   </label>
                   <div className="relative">
-                    <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-vinke-ink4" />
                     <input
                       type={showSenha ? "text" : "password"}
                       value={senha}
                       onChange={(e) => setSenha(e.target.value)}
                       placeholder="Mínimo 6 caracteres"
                       required
-                      className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-10 text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder-slate-500"
+                      className="w-full rounded-xl border-[1.5px] border-vinke-line bg-white py-3 pl-10 pr-10 text-sm outline-none transition focus:border-vinke focus:ring-[3px] focus:ring-vinke-ring dark:border-vinke-navy-line dark:bg-vinke-navy dark:text-white dark:placeholder-slate-500"
                     />
                     <button
                       type="button"
                       onClick={() => setShowSenha((v) => !v)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-vinke-ink4 hover:text-vinke-ink2"
                     >
                       {showSenha ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
@@ -137,23 +135,23 @@ function RedefinirSenhaContent() {
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-slate-400">
+                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-vinke-ink3">
                     Confirmar senha
                   </label>
                   <div className="relative">
-                    <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-vinke-ink4" />
                     <input
                       type={showConfirmar ? "text" : "password"}
                       value={confirmar}
                       onChange={(e) => setConfirmar(e.target.value)}
                       placeholder="Repita a nova senha"
                       required
-                      className="w-full rounded-xl border border-slate-200 bg-white py-3 pl-10 pr-10 text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder-slate-500"
+                      className="w-full rounded-xl border-[1.5px] border-vinke-line bg-white py-3 pl-10 pr-10 text-sm outline-none transition focus:border-vinke focus:ring-[3px] focus:ring-vinke-ring dark:border-vinke-navy-line dark:bg-vinke-navy dark:text-white dark:placeholder-slate-500"
                     />
                     <button
                       type="button"
                       onClick={() => setShowConfirmar((v) => !v)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-vinke-ink4 hover:text-vinke-ink2"
                     >
                       {showConfirmar ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
@@ -173,13 +171,13 @@ function RedefinirSenhaContent() {
             {/* Success */}
             {stage === "success" && (
               <div className="flex flex-col items-center gap-4 py-4 text-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-950/40">
-                  <CheckCircle size={36} className="text-emerald-500" />
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-vinke-green-soft dark:bg-emerald-950/40">
+                  <CheckCircle size={36} className="text-vinke-green" />
                 </div>
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+                <h2 className="text-xl font-bold text-vinke-ink dark:text-white">
                   Senha redefinida!
                 </h2>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
+                <p className="text-sm text-vinke-ink3">
                   Sua senha foi alterada com sucesso. Faça login com a nova senha.
                 </p>
                 <button
@@ -197,10 +195,10 @@ function RedefinirSenhaContent() {
                 <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-50 dark:bg-red-950/40">
                   <XCircle size={36} className="text-red-500" />
                 </div>
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+                <h2 className="text-xl font-bold text-vinke-ink dark:text-white">
                   Link inválido
                 </h2>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
+                <p className="text-sm text-vinke-ink3">
                   {errorMsg}
                 </p>
                 <button
@@ -223,7 +221,7 @@ export default function RedefinirSenhaPage() {
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-[linear-gradient(180deg,#020817_0%,#071235_100%)] flex items-center justify-center">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-blue-200 border-t-blue-600" />
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-vinke-ring border-t-vinke" />
       </div>
     }>
       <RedefinirSenhaContent />

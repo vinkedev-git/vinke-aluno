@@ -398,7 +398,7 @@ export default function EstudarClient() {
           <AnswerButton
             tone="red"
             icon={Frown}
-            label="Não sabia"
+            label="Errei"
             shortcut="1"
             onClick={() => void applyAnswer("again")}
             disabled={saving}
@@ -406,7 +406,7 @@ export default function EstudarClient() {
           <AnswerButton
             tone="amber"
             icon={Meh}
-            label="Quase"
+            label="Difícil"
             shortcut="2"
             onClick={() => void applyAnswer("hard")}
             disabled={saving}
@@ -414,7 +414,7 @@ export default function EstudarClient() {
           <AnswerButton
             tone="emerald"
             icon={ThumbsUp}
-            label="Sabia"
+            label="Fácil"
             shortcut="3"
             onClick={() => void applyAnswer("good")}
             disabled={saving}
@@ -441,11 +441,11 @@ function AnswerButton({
   disabled?: boolean;
 }) {
   const colors: Record<string, string> = {
-    red: "border-red-200 bg-red-50 text-red-700 hover:bg-red-100 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300",
+    red: "border-transparent bg-vinke-red-soft text-vinke-red hover:opacity-90 dark:bg-vinke-red/10 dark:text-vinke-red-dark",
     amber:
-      "border-transparent bg-vinke-amber-soft text-vinke-amber hover:bg-amber-100 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-300",
+      "border-transparent bg-vinke-amber-soft text-vinke-amber hover:opacity-90 dark:bg-vinke-amber/10 dark:text-vinke-amber-bar",
     emerald:
-      "border-vinke-green-soft bg-vinke-green-soft text-vinke-green-text hover:bg-vinke-green-soft dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-vinke-green",
+      "border-transparent bg-vinke-green-soft text-vinke-green-text hover:opacity-90 dark:bg-vinke-green/10 dark:text-vinke-green",
   };
   return (
     <button
@@ -494,9 +494,9 @@ function DoneScreen({
             Você revisou {stats.reviewed} card(s) e acertou {percent}%.
           </p>
           <div className="mt-6 grid grid-cols-3 gap-3">
-            <MiniStat label="Sabia" value={stats.correct} tone="emerald" />
-            <MiniStat label="Quase" value={stats.almost} tone="amber" />
-            <MiniStat label="Não sabia" value={stats.wrong} tone="red" />
+            <MiniStat label="Fácil" value={stats.correct} tone="emerald" />
+            <MiniStat label="Difícil" value={stats.almost} tone="amber" />
+            <MiniStat label="Errei" value={stats.wrong} tone="red" />
           </div>
           {stats.newMastered > 0 && (
             <div className="mt-4 rounded-2xl border border-vinke-green-soft bg-vinke-green-soft px-4 py-3 text-sm font-semibold text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-vinke-green">

@@ -15,6 +15,7 @@ type Settings = {
   studyDays: string[];
   targetExam: string;
   targetExamDate: string;
+  metaNota: number;
 };
 
 const DEFAULTS: Settings = {
@@ -24,6 +25,7 @@ const DEFAULTS: Settings = {
   studyDays: ["segunda", "terça", "quarta", "quinta", "sexta"],
   targetExam: "",
   targetExamDate: "",
+  metaNota: 0,
 };
 
 const DAYS = [
@@ -67,6 +69,7 @@ export default function ConfiguracoesClient() {
           studyDays: Array.isArray(data.studyDays) ? data.studyDays : DEFAULTS.studyDays,
           targetExam: String(data.targetExam ?? ""),
           targetExamDate: String(data.targetExamDate ?? ""),
+          metaNota: Number(data.metaNota ?? 0),
         });
       }
     } finally {
@@ -227,7 +230,23 @@ export default function ConfiguracoesClient() {
             </div>
           </div>
           {form.targetExam && (
-            <div>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex flex-col">
+                  <span className="text-xs font-bold text-vinke-ink dark:text-slate-200">Meta de nota</span>
+                  <span className="text-[10px] font-medium text-vinke-ink3">usada no acompanhamento do Início</span>
+                </div>
+                <input
+                  type="number"
+                  min={300}
+                  max={1000}
+                  step={10}
+                  value={form.metaNota || ""}
+                  placeholder="720"
+                  onChange={(e) => setForm((p) => ({ ...p, metaNota: Number(e.target.value) || 0 }))}
+                  className="w-24 rounded-[9px] border-[1.5px] border-vinke-line bg-white px-3 py-2 text-center font-display text-sm font-bold text-vinke-ink outline-none focus:border-vinke focus:ring-[3px] focus:ring-vinke-ring dark:border-vinke-navy-line dark:bg-vinke-navy dark:text-slate-100"
+                />
+              </div>
               <label className="mb-1 block text-xs font-semibold text-vinke-ink2 dark:text-vinke-ink4">Data da prova</label>
               <input
                 type="date"

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, serverTimestamp, setDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
@@ -33,7 +33,7 @@ type ProfileData = {
 
 function initials(nameOrEmail: string) {
   const s = (nameOrEmail || "").trim();
-  if (!s) return "AQ";
+  if (!s) return "V";
   const parts = s.split(/\s+/).filter(Boolean);
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return (parts[0].slice(0, 1) + parts[1].slice(0, 1)).toUpperCase();
@@ -270,6 +270,8 @@ export default function PerfilClient() {
         <div className="mt-0.5 text-3xl font-black text-vinke-ink dark:text-slate-100">Perfil</div>
       </div>
 
+      <PerfilStats />
+
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
 
         {/* CARD PRINCIPAL — dados */}
@@ -425,6 +427,180 @@ export default function PerfilClient() {
               <div className="text-xs text-vinke-ink3 dark:text-vinke-ink4">Área do Aluno</div>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+// ─── Estatísticas históricas + marcos (design Canvas-3) ──────────────────────
+
+type StatsSession = {
+  status?: string;
+  answeredCount?: number;
+  correctCount?: number;
+  updatedAt?: unknown;
+};
+
+function statsTsToMs(v: unknown): number {
+  if (!v) return 0;
+  if (typeof v === "object" && v !== null) {
+    const t = v as { toMillis?: () => number; seconds?: number };
+    if (typeof t.toMillis === "function") return t.toMillis();
+    if (typeof t.seconds === "number") return t.seconds * 1000;
+  }
+  return 0;
+}
+
+function PerfilStats() {
+  const [loading2, setLoading2] = useState(true);
+  const [respondidas, setRespondidas] = useState(0);
+  const [simulados, setSimulados] = useState(0);
+  const [streak, setStreak] = useState(0);
+  const [serie, setSerie] = useState<Array<{ label: string; pct: number }>>([]);
+
+  useEffect(() => {
+    const u = auth.currentUser;
+    if (!u) { setLoading2(false); return; }
+    (async () => {
+      try {
+        const [sessSnap, statsSnap] = await Promise.all([
+          getDocs(collection(db, "users", u.uid, "sessions")),
+          getDoc(doc(db, "users", u.uid, "meta", "stats")),
+        ]);
+        const sessions = sessSnap.docs.map((d) => d.data() as StatsSession);
+        setRespondidas(sessions.reduce((a, x) => a + Number(x.answeredCount ?? 0), 0));
+        setSimulados(sessions.filter((x) => x.status === "completed").length);
+        if (statsSnap.exists()) {
+          const st = statsSnap.data() as { streakCount?: number; bestStreak?: number };
+          setStreak(Number(st.bestStreak ?? st.streakCount ?? 0));
+        }
+        // evolução: acerto médio por mês (últimos 6 meses com dados)
+        const porMes = new Map<string, { r: number; c: number }>();
+        sessions.forEach((x) => {
+          const ms = statsTsToMs(x.updatedAt);
+          if (!ms) return;
+          const d = new Date(ms);
+          const key = `${d.getFullYear()}-${String(d.getMonth()).padStart(2, "0")}`;
+          const agg = porMes.get(key) ?? { r: 0, c: 0 };
+          agg.r += Number(x.answeredCount ?? 0);
+          agg.c += Number(x.correctCount ?? 0);
+          porMes.set(key, agg);
+        });
+        const meses = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+        const pontos = Array.from(porMes.entries())
+          .sort((a, b) => a[0].localeCompare(b[0]))
+          .slice(-6)
+          .filter(([, v]) => v.r > 0)
+          .map(([k, v]) => ({
+            label: meses[Number(k.split("-")[1])],
+            pct: Math.round((v.c / v.r) * 100),
+          }));
+        setSerie(pontos);
+      } finally {
+        setLoading2(false);
+      }
+    })();
+  }, []);
+
+  if (loading2) {
+    return <div className="h-40 animate-pulse rounded-2xl bg-vinke-line2 dark:bg-vinke-navy-sel" />;
+  }
+
+  const marcos = [
+    { label: "100 questões", ok: respondidas >= 100 },
+    { label: "500 questões", ok: respondidas >= 500 },
+    { label: "1.000 questões", ok: respondidas >= 1000 },
+    { label: "7 dias seguidos", ok: streak >= 7 },
+    { label: "21 dias seguidos", ok: streak >= 21 },
+    { label: "1º simulado completo", ok: simulados >= 1 },
+  ];
+
+  const w = 520;
+  const h = 90;
+  const pts = serie.length >= 2
+    ? serie.map((p, i) => ({
+        x: 10 + (i / (serie.length - 1)) * (w - 20),
+        y: 10 + (1 - p.pct / 100) * (h - 20),
+      }))
+    : [];
+
+  return (
+    <div className="space-y-4">
+      {serie.length >= 2 ? (
+        <div className="flex flex-col gap-2 rounded-2xl bg-white p-5 dark:border dark:border-vinke-navy-line dark:bg-vinke-navy-card">
+          <div className="flex items-center justify-between">
+            <span className="font-display text-[13px] font-bold text-vinke-ink dark:text-white">Evolução do acerto</span>
+            {serie[serie.length - 1].pct > serie[0].pct ? (
+              <span className="rounded-full bg-vinke-green-soft px-2.5 py-0.5 text-[10px] font-bold text-vinke-green-text dark:bg-vinke-green/15 dark:text-vinke-green">
+                ↑ +{serie[serie.length - 1].pct - serie[0].pct} pts no período
+              </span>
+            ) : null}
+          </div>
+          <svg viewBox={`0 0 ${w} ${h + 16}`} className="block w-full">
+            <polyline
+              points={pts.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ")}
+              fill="none"
+              strokeWidth="3"
+              strokeLinecap="round"
+              className="stroke-vinke dark:stroke-vinke-lav"
+            />
+            {pts.length ? (
+              <circle cx={pts[pts.length - 1].x} cy={pts[pts.length - 1].y} r="5" className="fill-vinke-green" />
+            ) : null}
+            {serie.map((p, i) => (
+              <text
+                key={i}
+                x={pts[i].x}
+                y={h + 12}
+                textAnchor="middle"
+                fontSize="9"
+                className="fill-vinke-ink3"
+              >
+                {p.label}
+              </text>
+            ))}
+          </svg>
+        </div>
+      ) : null}
+
+      <div className="grid grid-cols-3 gap-3">
+        <div className="flex flex-col rounded-2xl bg-white p-4 dark:border dark:border-vinke-navy-line dark:bg-vinke-navy-card">
+          <span className="text-[9px] font-semibold tracking-[0.1em] text-vinke-ink3">TOTAL DE QUESTÕES</span>
+          <span className="font-display text-2xl font-bold text-vinke-ink dark:text-white [font-variant-numeric:tabular-nums]">
+            {respondidas.toLocaleString("pt-BR")}
+          </span>
+        </div>
+        <div className="flex flex-col rounded-2xl bg-white p-4 dark:border dark:border-vinke-navy-line dark:bg-vinke-navy-card">
+          <span className="text-[9px] font-semibold tracking-[0.1em] text-vinke-ink3">MELHOR SEQUÊNCIA</span>
+          <span className="font-display text-2xl font-bold text-vinke-ink dark:text-white">
+            {streak} {streak === 1 ? "dia" : "dias"}
+          </span>
+        </div>
+        <div className="flex flex-col rounded-2xl bg-white p-4 dark:border dark:border-vinke-navy-line dark:bg-vinke-navy-card">
+          <span className="text-[9px] font-semibold tracking-[0.1em] text-vinke-ink3">SIMULADOS</span>
+          <span className="font-display text-2xl font-bold text-vinke-ink dark:text-white">{simulados}</span>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-2.5 rounded-2xl bg-white p-5 dark:border dark:border-vinke-navy-line dark:bg-vinke-navy-card">
+        <span className="font-display text-[13px] font-bold text-vinke-ink dark:text-white">Marcos</span>
+        <div className="flex flex-wrap gap-2">
+          {marcos.map((m) => (
+            <span
+              key={m.label}
+              className={cn(
+                "rounded-full px-3 py-1.5 text-[11px] font-bold",
+                m.ok
+                  ? "bg-vinke-green-soft text-vinke-green-text dark:bg-vinke-green/15 dark:text-vinke-green"
+                  : "border-[1.5px] border-dashed border-vinke-line font-semibold text-vinke-ink3 dark:border-vinke-navy-line"
+              )}
+            >
+              {m.ok ? "✓ " : ""}
+              {m.label}
+            </span>
+          ))}
         </div>
       </div>
     </div>

@@ -251,12 +251,12 @@ export default function AssinaturaClient() {
               </div>
             ) : null}
 
-            {/* Card principal */}
-            <div className="rounded-3xl border bg-white shadow-sm p-6 dark:border-vinke-navy-line dark:bg-vinke-navy-card">
+            {/* Card principal — navy, como no design */}
+            <div className="rounded-3xl bg-vinke-navy p-6">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
-                  <div className="text-sm text-vinke-ink3 dark:text-vinke-ink4">Seu plano</div>
-                  <div className="mt-1 text-xl font-black text-vinke-ink truncate dark:text-slate-100">{planName}</div>
+                  <div className="text-[10px] font-semibold tracking-[0.12em] text-vinke-ink3">SEU PLANO</div>
+                  <div className="mt-1 truncate font-display text-xl font-bold text-white">{planName}</div>
                   <div className="mt-2 text-sm text-vinke-ink2 dark:text-slate-300">
                     E-mail:{" "}
                     <span className="font-semibold text-vinke-ink dark:text-slate-100">
@@ -275,34 +275,34 @@ export default function AssinaturaClient() {
                 </span>
               </div>
 
-              <div className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="rounded-2xl border bg-vinke-offwhite p-5 dark:border-vinke-navy-line dark:bg-vinke-navy-sel">
-                  <div className="text-xs text-vinke-ink3 dark:text-vinke-ink4">Vencimento</div>
-                  <div className="mt-2 text-2xl font-black text-vinke-ink dark:text-slate-100">{vencimento}</div>
-                  <div className="mt-1 text-sm text-vinke-ink2 dark:text-slate-300">
+              <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div className="rounded-2xl bg-vinke-navy-card p-5">
+                  <div className="text-xs text-vinke-ink3">Vencimento</div>
+                  <div className="mt-2 font-display text-2xl font-bold text-white">{vencimento}</div>
+                  <div className="mt-1 text-sm text-slate-300">
                     {remainingDays === null ? "—" : expired ? "Expirada" : `${remainingDays} dia(s) restantes`}
                   </div>
                 </div>
 
-                <div className="rounded-2xl border bg-vinke-offwhite p-5 dark:border-vinke-navy-line dark:bg-vinke-navy-sel">
-                  <div className="text-xs text-vinke-ink3 dark:text-vinke-ink4">Valor</div>
-                  <div className="mt-2 text-2xl font-black text-vinke-ink dark:text-slate-100">{paidText}</div>
-                  <div className="mt-1 text-sm text-vinke-ink2 dark:text-slate-300">{ent?.currency || "BRL"}</div>
+                <div className="rounded-2xl bg-vinke-navy-card p-5">
+                  <div className="text-xs text-vinke-ink3">Valor</div>
+                  <div className="mt-2 font-display text-2xl font-bold text-white">{paidText}</div>
+                  <div className="mt-1 text-sm text-slate-300">{ent?.currency || "BRL"}</div>
                 </div>
 
-                <div className="rounded-2xl border bg-vinke-offwhite p-5 dark:border-vinke-navy-line dark:bg-vinke-navy-sel">
-                  <div className="text-xs text-vinke-ink3 dark:text-vinke-ink4">Produto</div>
-                  <div className="mt-2 text-sm font-semibold text-vinke-ink dark:text-slate-100">
+                <div className="rounded-2xl bg-vinke-navy-card p-5">
+                  <div className="text-xs text-vinke-ink3">Produto</div>
+                  <div className="mt-2 text-sm font-semibold text-white">
                     {ent?.productId ? `ID: ${ent.productId}` : "—"}
                   </div>
-                  <div className="mt-2 text-xs text-vinke-ink3 dark:text-vinke-ink4">
-                    Origem: <span className="font-semibold text-vinke-ink2 dark:text-slate-200">{ent?.source || "—"}</span>
+                  <div className="mt-2 text-xs text-vinke-ink3">
+                    Origem: <span className="font-semibold text-slate-200">{ent?.source || "—"}</span>
                   </div>
                 </div>
               </div>
 
-              <div className="mt-6 pt-5 border-t border-vinke-line flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between dark:border-vinke-navy-line">
-                <div className="text-sm text-vinke-ink2 dark:text-slate-300">
+              <div className="mt-6 flex flex-col gap-3 border-t border-vinke-navy-line pt-5 sm:flex-row sm:items-center sm:justify-between">
+                <div className="text-sm text-vinke-ink3">
                   Precisa de ajuda com sua assinatura? Fale com o suporte.
                 </div>
 

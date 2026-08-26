@@ -76,14 +76,14 @@ export default function AlunoTopHeader({
 
   const initials = useMemo(() => {
     const base = displayName.trim();
-    if (!base) return "AQ";
+    if (!base) return "V";
     const parts = base.split(/\s+/).filter(Boolean);
     if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
     return (parts[0].slice(0, 1) + parts[1].slice(0, 1)).toUpperCase();
   }, [displayName]);
 
   return (
-    <header className="sticky top-0 z-30 overflow-hidden border-b border-slate-200/70 bg-white/85 backdrop-blur dark:border-slate-800/80 dark:bg-[#050f2c]/95">
+    <header className="sticky top-0 z-30 overflow-hidden border-b border-vinke-line bg-white/85 backdrop-blur dark:border-vinke-navy-line dark:bg-vinke-navy-deep/95">
       <div className="flex items-center justify-between gap-3 px-4 py-4 sm:px-6 lg:px-10">
         {/* Left */}
         <div className="flex items-center gap-3 min-w-0">
@@ -91,17 +91,17 @@ export default function AlunoTopHeader({
           <button
             type="button"
             onClick={onMenuClick}
-            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-sm lg:hidden dark:border-slate-700 dark:bg-[#061738] dark:text-slate-300"
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-vinke-line bg-white text-vinke-ink2 shadow-sm lg:hidden dark:border-vinke-navy-line dark:bg-vinke-navy-card dark:text-slate-300"
             aria-label="Abrir menu"
           >
             <Menu size={18} />
           </button>
 
           <div className="min-w-0">
-            <div className="text-xs text-slate-500 font-semibold dark:text-slate-400">
+            <div className="text-xs font-semibold text-vinke-ink3">
               {headerSubtitle}
             </div>
-            <div className="text-lg font-black text-slate-900 truncate dark:text-slate-100">
+            <div className="truncate font-display text-lg font-bold text-vinke-ink dark:text-slate-100">
               {headerTitle}
             </div>
           </div>
@@ -109,11 +109,11 @@ export default function AlunoTopHeader({
 
         {/* Right */}
         <div className="flex min-w-0 shrink-0 items-center gap-3">
-          <div className="hidden sm:block text-sm text-slate-600 truncate max-w-[220px] dark:text-slate-300">
+          <div className="hidden max-w-[220px] truncate text-sm text-vinke-ink2 sm:block dark:text-slate-300">
             {displayName}
           </div>
 
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-slate-900 text-sm font-bold text-white shadow-lg sm:h-10 sm:w-10 dark:border dark:border-slate-700 dark:bg-slate-100 dark:text-slate-900">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-vinke font-display text-sm font-bold text-white sm:h-10 sm:w-10">
             {initials}
           </div>
         </div>
