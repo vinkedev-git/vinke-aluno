@@ -1,21 +1,20 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { auth, db } from "@/lib/firebase";
-import { collection, doc, getDoc, getDocs } from "firebase/firestore";
-
-import { Button } from "@/components/ui/button";
 import {
-  CheckCircle2,
-  XCircle,
-  RotateCcw,
-  ListChecks,
-  Plus,
-  Trophy,
-  Target,
-  AlertTriangle,
-} from "lucide-react";
+  addDoc,
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  serverTimestamp,
+  updateDoc,
+} from "firebase/firestore";
+
+type AnswerItem = { selectedOptionId?: string; isCorrect?: boolean };
 
 type SessionDoc = {
   id: string;
@@ -25,11 +24,24 @@ type SessionDoc = {
   correctCount?: number;
   scorePercent?: number;
   createdAt?: unknown;
-  filters?: {
-    temas?: unknown;
-  };
+  updatedAt?: unknown;
+  title?: string;
+  titleDisplay?: string;
+  questionIds?: unknown;
+  answersMap?: Record<string, AnswerItem>;
+  filters?: { temas?: unknown };
   control?: boolean;
   kind?: string;
+};
+
+type QuestionRow = {
+  id: string;
+  index: number;
+  snippet: string;
+  assunto: string;
+  selected: string;
+  correct: string;
+  status: "correct" | "wrong" | "blank";
 };
 
 function cn(...xs: Array<string | false | null | undefined>) {
@@ -44,11 +56,6 @@ function getErrorMessage(error: unknown, fallback: string) {
 function safeNum(v: unknown, fallback = 0) {
   const n = Number(v);
   return Number.isFinite(n) ? n : fallback;
-}
-
-function formatPct(v: number) {
-  if (!Number.isFinite(v)) return "—";
-  return `${Math.round(v)}%`;
 }
 
 type TimestampLike = { toMillis?: () => number };
@@ -70,135 +77,37 @@ function toMillis(value: unknown): number {
   return 0;
 }
 
-function toStringList(value: unknown): string[] {
-  if (!Array.isArray(value)) return [];
-  return value
-    .map((item) => String(item ?? "").trim())
+function normalizeIdList(v: unknown): string[] {
+  if (!Array.isArray(v)) return [];
+  return v
+    .map((item) => {
+      if (typeof item === "string") return item.trim();
+      if (item && typeof item === "object" && "id" in item) {
+        return String((item as { id?: unknown }).id ?? "").trim();
+      }
+      return "";
+    })
     .filter(Boolean);
 }
 
-type ScoreLevel = {
-  label: string;
-  sublabel: string;
-  ringColor: string;
-  bgClass: string;
-  textClass: string;
-  borderClass: string;
-  Icon: React.ElementType;
-  iconClass: string;
-};
-
-function getScoreLevel(score: number, answered: number): ScoreLevel {
-  if (answered === 0) {
-    return {
-      label: "Sem respostas",
-      sublabel: "Você não respondeu nenhuma questão.",
-      ringColor: "#94a3b8",
-      bgClass: "bg-slate-100 dark:bg-slate-800/50",
-      textClass: "text-slate-500 dark:text-slate-400",
-      borderClass: "border-slate-200 dark:border-slate-700",
-      Icon: AlertTriangle,
-      iconClass: "text-slate-400",
-    };
-  }
-  if (score >= 70) {
-    return {
-      label: "Excelente! 🎉",
-      sublabel: "Você atingiu a meta de aproveitamento.",
-      ringColor: "#22c55e",
-      bgClass: "bg-emerald-50 dark:bg-emerald-950/30",
-      textClass: "text-emerald-700 dark:text-emerald-300",
-      borderClass: "border-emerald-200 dark:border-emerald-900/40",
-      Icon: Trophy,
-      iconClass: "text-emerald-500",
-    };
-  }
-  if (score >= 50) {
-    return {
-      label: "Bom trabalho!",
-      sublabel: "Continue praticando para atingir 70%.",
-      ringColor: "#f59e0b",
-      bgClass: "bg-amber-50 dark:bg-amber-950/30",
-      textClass: "text-amber-700 dark:text-amber-300",
-      borderClass: "border-amber-200 dark:border-amber-900/40",
-      Icon: Target,
-      iconClass: "text-amber-500",
-    };
-  }
-  return {
-    label: "Continue tentando!",
-    sublabel: "Revise os temas e tente novamente.",
-    ringColor: "#ef4444",
-    bgClass: "bg-rose-50 dark:bg-rose-950/30",
-    textClass: "text-rose-700 dark:text-rose-300",
-    borderClass: "border-rose-200 dark:border-rose-900/40",
-    Icon: RotateCcw,
-    iconClass: "text-rose-500",
-  };
+function stripHtml(html: string) {
+  return html
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
-// SVG ring gauge — circumference of r=54 circle ≈ 339.3
-const RING_R = 54;
-const RING_CIRC = 2 * Math.PI * RING_R;
-
-function ScoreRing({ score, ringColor }: { score: number; ringColor: string }) {
-  const offset = RING_CIRC * (1 - Math.max(0, Math.min(100, score)) / 100);
-  return (
-    <svg viewBox="0 0 140 140" className="h-36 w-36">
-      {/* Track */}
-      <circle
-        cx="70" cy="70" r={RING_R}
-        fill="none"
-        strokeWidth="12"
-        stroke="currentColor"
-        className="text-slate-100 dark:text-slate-800"
-      />
-      {/* 70% goal arc (faint green) */}
-      <circle
-        cx="70" cy="70" r={RING_R}
-        fill="none"
-        strokeWidth="12"
-        stroke="#22c55e"
-        opacity="0.18"
-        strokeDasharray={`${RING_CIRC * 0.7} ${RING_CIRC}`}
-        strokeLinecap="round"
-        transform="rotate(-90 70 70)"
-      />
-      {/* Score arc */}
-      <circle
-        cx="70" cy="70" r={RING_R}
-        fill="none"
-        strokeWidth="12"
-        stroke={ringColor}
-        strokeDasharray={`${RING_CIRC - offset} ${RING_CIRC}`}
-        strokeDashoffset={0}
-        strokeLinecap="round"
-        transform="rotate(-90 70 70)"
-        style={{ transition: "stroke-dasharray 0.6s ease" }}
-      />
-      {/* Score text */}
-      <text
-        x="70" y="65"
-        textAnchor="middle"
-        fontSize="26"
-        fontWeight="900"
-        fill={ringColor}
-      >
-        {Math.round(score)}%
-      </text>
-      <text
-        x="70" y="83"
-        textAnchor="middle"
-        fontSize="11"
-        fill="currentColor"
-        className="fill-slate-400"
-        fontWeight="600"
-      >
-        aproveitamento
-      </text>
-    </svg>
-  );
+function formatDateShort(ts: unknown) {
+  const ms = toMillis(ts);
+  if (!ms) return "";
+  const d = new Date(ms);
+  const meses = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+  return `${d.getDate()} ${meses[d.getMonth()]}`;
 }
+
+type Filtro = "erros" | "todas" | "branco";
 
 export default function ResultadoClient({ sessionId }: { sessionId: string }) {
   const router = useRouter();
@@ -206,7 +115,11 @@ export default function ResultadoClient({ sessionId }: { sessionId: string }) {
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
   const [session, setSession] = useState<SessionDoc | null>(null);
-  const [simuladoNumero, setSimuladoNumero] = useState<number | null>(null);
+  const [previousScores, setPreviousScores] = useState<number[]>([]);
+  const [rows, setRows] = useState<QuestionRow[]>([]);
+  const [rowsLoading, setRowsLoading] = useState(true);
+  const [filtro, setFiltro] = useState<Filtro>("erros");
+  const [creating, setCreating] = useState(false);
 
   const load = useCallback(async () => {
     const u = auth.currentUser;
@@ -223,26 +136,67 @@ export default function ResultadoClient({ sessionId }: { sessionId: string }) {
       const sessionsRef = collection(db, "users", u.uid, "sessions");
       const ref = doc(sessionsRef, sessionId);
 
-      const [snap, listSnap] = await Promise.all([
-        getDoc(ref),
-        getDocs(sessionsRef),
-      ]);
+      const [snap, listSnap] = await Promise.all([getDoc(ref), getDocs(sessionsRef)]);
 
       if (!snap.exists()) throw new Error("Sessão não encontrada.");
-      setSession({ id: snap.id, ...(snap.data() as Omit<SessionDoc, "id">) });
+      const sess: SessionDoc = { id: snap.id, ...(snap.data() as Omit<SessionDoc, "id">) };
+      setSession(sess);
 
-      const allSessions = listSnap.docs.map((d) => ({
-        id: d.id,
-        ...(d.data() as Omit<SessionDoc, "id">),
-      }));
-      allSessions.sort((a, b) => toMillis(a.createdAt) - toMillis(b.createdAt));
-      const index = allSessions.findIndex((item) => item.id === sessionId);
-      setSimuladoNumero(index >= 0 ? index + 1 : null);
+      // notas das tentativas anteriores (concluídas, antes desta)
+      const thisMs = toMillis(sess.createdAt);
+      const prev = listSnap.docs
+        .map((d) => ({ id: d.id, ...(d.data() as Omit<SessionDoc, "id">) }))
+        .filter(
+          (s) =>
+            s.id !== sessionId &&
+            s.status === "completed" &&
+            safeNum(s.answeredCount) > 0 &&
+            toMillis(s.createdAt) < thisMs
+        )
+        .sort((a, b) => toMillis(b.createdAt) - toMillis(a.createdAt))
+        .slice(0, 2)
+        .map((s) => Math.round(safeNum(s.scorePercent)))
+        .reverse();
+      setPreviousScores(prev);
+
+      // linhas questão por questão (busca os docs das questões)
+      setRowsLoading(true);
+      const qids = normalizeIdList(sess.questionIds);
+      const answers = sess.answersMap ?? {};
+      const docs = await Promise.all(
+        qids.map(async (qid, i) => {
+          let snippet = "";
+          let assunto = "";
+          let correct = "";
+          try {
+            const qSnap = await getDoc(doc(db, "questionsBank", qid));
+            if (qSnap.exists()) {
+              const q = qSnap.data() as Record<string, unknown>;
+              snippet = stripHtml(String(q.prompt_text ?? q.prompt ?? "")).slice(0, 90);
+              const assuntos = Array.isArray(q.assuntos) ? q.assuntos : Array.isArray(q.themes) ? q.themes : [];
+              assunto = String(assuntos[0] ?? q.disciplina ?? q.area ?? "").trim();
+              correct = String(q.correctOptionId ?? "").trim();
+            }
+          } catch {
+            /* ignora questão que falhou */
+          }
+          const ans = answers[qid];
+          const selected = String(ans?.selectedOptionId ?? "").trim();
+          const status: QuestionRow["status"] = !selected
+            ? "blank"
+            : ans?.isCorrect
+              ? "correct"
+              : "wrong";
+          return { id: qid, index: i + 1, snippet, assunto, selected, correct, status };
+        })
+      );
+      setRows(docs);
     } catch (error: unknown) {
       console.error(error);
       setErr(getErrorMessage(error, "Falha ao carregar resultado."));
     } finally {
       setLoading(false);
+      setRowsLoading(false);
     }
   }, [sessionId]);
 
@@ -256,38 +210,106 @@ export default function ResultadoClient({ sessionId }: { sessionId: string }) {
     const answered = total > 0 ? Math.min(answeredRaw, total) : answeredRaw;
     const correct = safeNum(session?.correctCount);
     const errors = Math.max(0, answered - correct);
-    const score =
-      session?.scorePercent != null
-        ? safeNum(session?.scorePercent)
-        : total > 0
-        ? (correct / total) * 100
-        : 0;
-    return { total, answered, correct, errors, score };
+    const blank = Math.max(0, total - answered);
+    const score = answered > 0 ? Math.round((correct / answered) * 100) : 0;
+    return { total, answered, correct, errors, blank, score };
   }, [session]);
 
-  const temas = useMemo(() => toStringList(session?.filters?.temas), [session]);
+  // acerto por assunto (a partir das linhas)
+  const porAssunto = useMemo(() => {
+    const map = new Map<string, { total: number; correct: number }>();
+    for (const r of rows) {
+      if (r.status === "blank" || !r.assunto) continue;
+      const cur = map.get(r.assunto) ?? { total: 0, correct: 0 };
+      cur.total += 1;
+      if (r.status === "correct") cur.correct += 1;
+      map.set(r.assunto, cur);
+    }
+    return Array.from(map.entries())
+      .map(([nome, v]) => ({ nome, ...v, pct: Math.round((v.correct / v.total) * 100) }))
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 5);
+  }, [rows]);
+
+  const melhorQueAnteriores =
+    previousScores.length > 0 && previousScores.every((p) => stats.score > p);
+
+  const filteredRows = useMemo(() => {
+    if (filtro === "erros") return rows.filter((r) => r.status === "wrong");
+    if (filtro === "branco") return rows.filter((r) => r.status === "blank");
+    return rows;
+  }, [rows, filtro]);
+
+  async function verResolucao(rowIndex: number) {
+    const u = auth.currentUser;
+    if (!u) return;
+    try {
+      await updateDoc(doc(db, "users", u.uid, "sessions", sessionId), {
+        currentIndex: rowIndex - 1,
+      });
+    } catch {
+      /* segue mesmo sem persistir */
+    }
+    router.push(`/aluno/simulados/${sessionId}`);
+  }
+
+  async function refazerErros() {
+    const u = auth.currentUser;
+    if (!u || creating) return;
+    const wrongIds = rows.filter((r) => r.status === "wrong").map((r) => r.id);
+    if (!wrongIds.length) return;
+    setCreating(true);
+    try {
+      const ref = await addDoc(collection(db, "users", u.uid, "sessions"), {
+        title: `Refazer erros · Simulado`,
+        titleDisplay: "Refazer erros",
+        kind: "error_review",
+        status: "in_progress",
+        filters: { temas: [] },
+        questionIds: wrongIds,
+        totalQuestions: wrongIds.length,
+        currentIndex: 0,
+        answeredCount: 0,
+        correctCount: 0,
+        wrongCount: 0,
+        scorePercent: 0,
+        updatedAt: serverTimestamp(),
+        createdAt: serverTimestamp(),
+      });
+      router.push(`/aluno/simulados/${ref.id}`);
+    } finally {
+      setCreating(false);
+    }
+  }
 
   if (loading) {
     return (
       <div className="space-y-4">
-        <div className="h-8 w-48 animate-pulse rounded-2xl bg-slate-200 dark:bg-slate-800" />
-        <div className="h-64 animate-pulse rounded-2xl bg-slate-200 dark:bg-slate-800" />
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-24 animate-pulse rounded-2xl bg-slate-200 dark:bg-slate-800" />
-          ))}
-        </div>
+        <div className="h-6 w-64 animate-pulse rounded-lg bg-vinke-line2 dark:bg-vinke-navy-sel" />
+        <div className="h-40 animate-pulse rounded-2xl bg-vinke-line2 dark:bg-vinke-navy-sel" />
+        <div className="h-72 animate-pulse rounded-2xl bg-vinke-line2 dark:bg-vinke-navy-sel" />
       </div>
     );
   }
 
   if (err) {
     return (
-      <div className="rounded-2xl border border-rose-200 bg-rose-50 px-5 py-5 dark:border-rose-900/40 dark:bg-rose-950/30">
-        <div className="font-semibold text-rose-700 dark:text-rose-300">{err}</div>
-        <div className="mt-4 flex gap-2">
-          <Button variant="secondary" onClick={() => router.push("/aluno/simulados")}>Voltar</Button>
-          <Button onClick={load}>Tentar novamente</Button>
+      <div className="flex flex-col gap-3 rounded-2xl bg-vinke-red-soft px-5 py-5 dark:bg-vinke-red/10">
+        <div className="font-semibold text-vinke-red dark:text-vinke-red-dark">{err}</div>
+        <div className="flex gap-2">
+          <Link
+            href="/aluno/simulados"
+            className="rounded-[9px] border-[1.5px] border-vinke-line bg-white px-4 py-2 text-xs font-bold text-vinke-ink dark:border-vinke-navy-line dark:bg-vinke-navy-card dark:text-slate-200"
+          >
+            Voltar
+          </Link>
+          <button
+            type="button"
+            onClick={() => void load()}
+            className="rounded-[9px] bg-vinke px-4 py-2 text-xs font-bold text-white"
+          >
+            Tentar novamente
+          </button>
         </div>
       </div>
     );
@@ -295,188 +317,221 @@ export default function ResultadoClient({ sessionId }: { sessionId: string }) {
 
   if (!session) return null;
 
-  const title = `Simulado ${String(simuladoNumero ?? 1).padStart(2, "0")}`;
-  const level = getScoreLevel(stats.score, stats.answered);
-  const { Icon: LevelIcon } = level;
-
-  const correctPct = stats.answered > 0 ? (stats.correct / stats.answered) * 100 : 0;
-  const errorPct = stats.answered > 0 ? (stats.errors / stats.answered) * 100 : 0;
-
   return (
-    <div className="space-y-5">
+    <div className="space-y-4 pb-6">
 
-      {/* Page header */}
-      <div>
-        <div className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-500">
-          Resultado final
-        </div>
-        <div className="mt-0.5 text-3xl font-black text-slate-900 dark:text-slate-100">{title}</div>
+      {/* Breadcrumb */}
+      <div className="text-[11px] font-medium text-vinke-ink3">
+        <Link href="/aluno/simulados" className="hover:underline">Simulados</Link>
+        {" → "}
+        <span className="font-bold text-vinke-ink dark:text-white">
+          Resultado{formatDateShort(session.updatedAt) ? ` · ${formatDateShort(session.updatedAt)}` : ""}
+        </span>
       </div>
 
-      {/* Hero card */}
-      <div className={cn(
-        "rounded-2xl border p-6",
-        level.bgClass, level.borderClass
-      )}>
-        <div className="flex flex-col items-center gap-6 sm:flex-row">
-          {/* Ring gauge */}
-          <div className="shrink-0">
-            <ScoreRing score={stats.score} ringColor={level.ringColor} />
+      {/* Hero + acerto por assunto */}
+      <div className="flex flex-col gap-3.5 lg:flex-row">
+        <div className="flex flex-[1.2] items-center gap-6 rounded-2xl bg-vinke-navy p-6">
+          <div className="flex min-w-0 flex-col gap-1">
+            <span className="text-[10px] font-semibold tracking-[0.12em] text-vinke-ink3">
+              SEU RESULTADO
+            </span>
+            <div className="flex flex-wrap items-baseline gap-2.5">
+              <span className="font-display text-[52px] font-bold leading-none text-white [font-variant-numeric:tabular-nums]">
+                {stats.score}%
+              </span>
+              {melhorQueAnteriores ? (
+                <span className="rounded-full bg-vinke-green-soft px-2.5 py-1 text-xs font-bold text-vinke-green-text">
+                  ↑ melhor que {previousScores.length === 1 ? "a última" : `as ${previousScores.length} últimas`}
+                </span>
+              ) : null}
+            </div>
+            <span className="text-xs font-medium text-vinke-ink3">
+              {stats.correct} acertos de {stats.answered} respondidas
+              {stats.blank > 0 ? ` · ${stats.blank} em branco` : ""}
+            </span>
           </div>
-
-          {/* Result message + info */}
-          <div className="flex-1 text-center sm:text-left">
-            <div className="flex items-center justify-center gap-2 sm:justify-start">
-              <LevelIcon size={22} className={level.iconClass} />
-              <div className={cn("text-2xl font-black", level.textClass)}>
-                {level.label}
-              </div>
+          {previousScores.length > 0 ? (
+            <div className="ml-auto hidden items-end gap-2 sm:flex">
+              {[...previousScores, stats.score].map((p, i, arr) => {
+                const isLast = i === arr.length - 1;
+                return (
+                  <div key={i} className="flex flex-col items-center gap-1">
+                    <div
+                      className={cn("w-7 rounded-t-md", isLast ? "bg-vinke-green" : "bg-vinke-navy-sel")}
+                      style={{ height: `${Math.max(10, (p / 100) * 70)}px` }}
+                    />
+                    <span
+                      className={cn(
+                        "text-[9px] font-semibold",
+                        isLast ? "font-bold text-vinke-green" : "text-vinke-ink3"
+                      )}
+                    >
+                      {p}%
+                    </span>
+                  </div>
+                );
+              })}
             </div>
-            <div className={cn("mt-1 text-sm font-medium", level.textClass, "opacity-80")}>
-              {level.sublabel}
-            </div>
+          ) : null}
+        </div>
 
-            {/* Themes */}
-            {temas.length > 0 && (
-              <div className="mt-4 flex flex-wrap gap-1.5 justify-center sm:justify-start">
-                {temas.slice(0, 5).map((t) => (
-                  <span
-                    key={t}
-                    className="rounded-full border border-slate-200 bg-white/70 px-2.5 py-0.5 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-300"
-                  >
-                    {t}
+        <div className="flex flex-1 flex-col gap-2.5 rounded-2xl bg-white p-5 dark:border dark:border-vinke-navy-line dark:bg-vinke-navy-card">
+          <span className="font-display text-[13px] font-bold text-vinke-ink dark:text-white">
+            Acerto por assunto
+          </span>
+          {rowsLoading ? (
+            <span className="text-xs text-vinke-ink3">Calculando…</span>
+          ) : porAssunto.length ? (
+            <div className="flex flex-col gap-2">
+              {porAssunto.map((a) => (
+                <div key={a.nome} className="flex items-center gap-2.5">
+                  <span className="w-[110px] shrink-0 truncate text-[11px] font-semibold text-vinke-ink dark:text-slate-200">
+                    {a.nome}
                   </span>
-                ))}
-                {temas.length > 5 && (
-                  <span className="rounded-full border border-slate-200 bg-white/70 px-2.5 py-0.5 text-xs font-semibold text-slate-500 dark:border-slate-700 dark:bg-slate-800/70">
-                    +{temas.length - 5}
+                  <div className="h-1.5 min-w-0 flex-1 rounded-full bg-vinke-line2 dark:bg-vinke-navy-sel">
+                    <div className="h-1.5 rounded-full bg-vinke" style={{ width: `${a.pct}%` }} />
+                  </div>
+                  <span className="shrink-0 font-display text-[11px] font-bold text-vinke-ink dark:text-white">
+                    {a.correct}/{a.total}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <span className="text-xs text-vinke-ink3">
+              Sem classificação por assunto nestas questões.
+            </span>
+          )}
+          <div className="mt-auto flex flex-wrap gap-2 pt-2">
+            {stats.errors > 0 ? (
+              <button
+                type="button"
+                onClick={() => void refazerErros()}
+                disabled={creating}
+                className="rounded-[9px] bg-vinke px-3.5 py-2.5 text-[11px] font-bold text-white transition hover:bg-vinke-deep disabled:opacity-60"
+              >
+                {creating ? "Preparando…" : `Refazer os ${stats.errors} erros`}
+              </button>
+            ) : null}
+            <Link
+              href="/aluno/simulados/novo"
+              className="rounded-[9px] border-[1.5px] border-vinke-line px-3.5 py-2.5 text-[11px] font-bold text-vinke-ink transition hover:bg-vinke-offwhite dark:border-vinke-navy-line dark:text-slate-200 dark:hover:bg-vinke-navy-sel"
+            >
+              Criar simulado parecido
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* Questão por questão */}
+      <div className="overflow-hidden rounded-2xl bg-white dark:border dark:border-vinke-navy-line dark:bg-vinke-navy-card">
+        <div className="flex flex-wrap items-center gap-2.5 px-5 py-4">
+          <span className="font-display text-[13px] font-bold text-vinke-ink dark:text-white">
+            Questão por questão
+          </span>
+          <FiltroChip
+            active={filtro === "erros"}
+            tone="red"
+            onClick={() => setFiltro("erros")}
+            label={`só erros (${stats.errors})`}
+          />
+          <FiltroChip
+            active={filtro === "todas"}
+            onClick={() => setFiltro("todas")}
+            label="todas"
+          />
+          {stats.blank > 0 ? (
+            <FiltroChip
+              active={filtro === "branco"}
+              onClick={() => setFiltro("branco")}
+              label={`em branco (${stats.blank})`}
+            />
+          ) : null}
+        </div>
+
+        {rowsLoading ? (
+          <div className="px-5 pb-5 text-xs text-vinke-ink3">Carregando questões…</div>
+        ) : filteredRows.length === 0 ? (
+          <div className="px-5 pb-5 text-xs text-vinke-ink3">
+            {filtro === "erros" ? "Nenhum erro — mandou bem! 🎉" : "Nada por aqui."}
+          </div>
+        ) : (
+          filteredRows.map((r) => (
+            <div
+              key={r.id}
+              className="grid grid-cols-[44px_1fr_90px] items-center gap-3 border-t border-vinke-line2 px-5 py-3 sm:grid-cols-[44px_1fr_130px_110px_90px] dark:border-vinke-navy-line"
+            >
+              <span
+                className={cn(
+                  "flex h-[26px] w-[26px] items-center justify-center rounded-lg text-[11px] font-bold",
+                  r.status === "correct"
+                    ? "bg-vinke-green-soft text-vinke-green-text dark:bg-vinke-green/15 dark:text-vinke-green"
+                    : r.status === "wrong"
+                      ? "bg-vinke-red-soft text-vinke-red dark:bg-vinke-red/15 dark:text-vinke-red-dark"
+                      : "bg-vinke-line2 text-vinke-ink2 dark:bg-vinke-navy dark:text-slate-400"
+                )}
+              >
+                {r.status === "correct" ? "✓" : r.status === "wrong" ? "✗" : "—"}
+              </span>
+              <span className="min-w-0 truncate text-xs font-medium text-vinke-ink dark:text-slate-200">
+                Q{r.index}
+                {r.snippet ? ` · ${r.snippet}…` : ""}
+              </span>
+              <span className="hidden truncate text-[10px] font-semibold text-vinke-ink3 sm:block">
+                {r.assunto || "—"}
+              </span>
+              <span className="hidden text-[11px] font-semibold sm:block">
+                {r.status === "blank" ? (
+                  <span className="text-vinke-amber dark:text-vinke-amber-bar">Em branco</span>
+                ) : r.status === "correct" ? (
+                  <span className="text-vinke-ink2 dark:text-slate-400">Você: {r.selected} ✓</span>
+                ) : (
+                  <span className="text-vinke-ink2 dark:text-slate-400">
+                    Você: {r.selected} · Certa: {r.correct || "?"}
                   </span>
                 )}
-              </div>
-            )}
-
-            {/* Actions */}
-            <div className="mt-5 flex flex-wrap gap-2 justify-center sm:justify-start">
-              <Button
-                onClick={() => router.push(`/aluno/simulados/${sessionId}`)}
-                className="gap-2"
-              >
-                <ListChecks size={15} />
-                Revisar questões
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={() => router.push("/aluno/simulados/novo")}
-                className="gap-2"
-              >
-                <Plus size={15} />
-                Novo simulado
-              </Button>
-              <Button
-                variant="secondary"
-                onClick={() => router.push("/aluno/simulados")}
-                className="gap-1.5"
-              >
-                Ver todos
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Stats grid */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800/80 dark:bg-slate-900/50">
-          <div className="text-[11px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-500">Nota</div>
-          <div className="mt-1 text-3xl font-black" style={{ color: level.ringColor }}>
-            {formatPct(stats.score)}
-          </div>
-          <div className="mt-0.5 text-xs text-slate-500 dark:text-slate-500">aproveitamento</div>
-        </div>
-
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 dark:border-emerald-900/30 dark:bg-emerald-950/20">
-          <div className="text-[11px] font-bold uppercase tracking-wide text-emerald-600 dark:text-emerald-500">Acertos</div>
-          <div className="mt-1 text-3xl font-black text-emerald-700 dark:text-emerald-300">{stats.correct}</div>
-          <div className="mt-0.5 text-xs text-emerald-600/70 dark:text-emerald-500/70">{formatPct(correctPct)} das respondidas</div>
-        </div>
-
-        <div className="rounded-2xl border border-rose-200 bg-rose-50/60 p-4 dark:border-rose-900/30 dark:bg-rose-950/20">
-          <div className="text-[11px] font-bold uppercase tracking-wide text-rose-500 dark:text-rose-400">Erros</div>
-          <div className="mt-1 text-3xl font-black text-rose-600 dark:text-rose-400">{stats.errors}</div>
-          <div className="mt-0.5 text-xs text-rose-500/70 dark:text-rose-400/70">{formatPct(errorPct)} das respondidas</div>
-        </div>
-
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800/80 dark:bg-slate-900/50">
-          <div className="text-[11px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-500">Questões</div>
-          <div className="mt-1 text-3xl font-black text-slate-900 dark:text-slate-100">
-            {stats.answered}
-            {stats.total > 0 && (
-              <span className="text-base font-semibold text-slate-400 dark:text-slate-600">/{stats.total}</span>
-            )}
-          </div>
-          <div className="mt-0.5 text-xs text-slate-500 dark:text-slate-500">respondidas</div>
-        </div>
-      </div>
-
-      {/* Breakdown bar */}
-      {stats.answered > 0 && (
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800/80 dark:bg-slate-900/50">
-          <div className="mb-3 text-sm font-bold text-slate-700 dark:text-slate-300">Distribuição de respostas</div>
-
-          {/* Stacked bar */}
-          <div className="h-3 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-            <div className="flex h-full">
-              <div
-                className="h-full bg-emerald-500 transition-all"
-                style={{ width: `${correctPct}%` }}
-              />
-              <div
-                className="h-full bg-rose-400 transition-all"
-                style={{ width: `${errorPct}%` }}
-              />
-            </div>
-          </div>
-
-          {/* Legend */}
-          <div className="mt-3 flex flex-wrap gap-4 text-xs">
-            <div className="flex items-center gap-1.5">
-              <CheckCircle2 size={13} className="text-emerald-500" />
-              <span className="text-slate-600 dark:text-slate-400">
-                <span className="font-bold text-emerald-600 dark:text-emerald-400">{stats.correct}</span> acertos ({formatPct(correctPct)})
               </span>
+              <button
+                type="button"
+                onClick={() => void verResolucao(r.index)}
+                className="text-right text-[11px] font-bold text-vinke dark:text-vinke-lav"
+              >
+                {r.status === "blank" ? "Responder" : "Ver resolução"}
+              </button>
             </div>
-            <div className="flex items-center gap-1.5">
-              <XCircle size={13} className="text-rose-400" />
-              <span className="text-slate-600 dark:text-slate-400">
-                <span className="font-bold text-rose-500 dark:text-rose-400">{stats.errors}</span> erros ({formatPct(errorPct)})
-              </span>
-            </div>
-            {stats.total > stats.answered && (
-              <div className="flex items-center gap-1.5">
-                <span className="inline-block h-3 w-3 rounded-full bg-slate-200 dark:bg-slate-700" />
-                <span className="text-slate-500 dark:text-slate-500">
-                  {stats.total - stats.answered} não respondidas
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* 70% goal note */}
-      {stats.answered > 0 && stats.score < 70 && (
-        <div className="rounded-2xl border border-indigo-200/60 bg-indigo-50/60 px-4 py-3 dark:border-indigo-900/30 dark:bg-indigo-950/20">
-          <div className="flex items-start gap-2.5">
-            <Target size={15} className="mt-0.5 shrink-0 text-indigo-500" />
-            <div className="text-sm text-indigo-700 dark:text-indigo-300">
-              <span className="font-bold">Meta: 70% de aproveitamento.</span>{" "}
-              {stats.score >= 50
-                ? `Você está a apenas ${Math.ceil(70 - stats.score)} p.p. da meta. Continue praticando!`
-                : "Revise os temas e crie um novo simulado focado nos conteúdos que você mais errou."}
-            </div>
-          </div>
-        </div>
-      )}
+          ))
+        )}
+      </div>
     </div>
+  );
+}
+
+function FiltroChip({
+  label,
+  active,
+  tone,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  tone?: "red";
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "rounded-full px-2.5 py-1 text-[10px] font-bold transition",
+        active
+          ? tone === "red"
+            ? "bg-vinke-red-soft text-vinke-red dark:bg-vinke-red/15 dark:text-vinke-red-dark"
+            : "bg-vinke-navy text-white dark:bg-white dark:text-vinke-navy"
+          : "text-vinke-ink3 hover:text-vinke-ink dark:hover:text-slate-200"
+      )}
+    >
+      {label}
+    </button>
   );
 }

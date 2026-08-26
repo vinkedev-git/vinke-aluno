@@ -804,268 +804,355 @@ export default function QuizClient({ sessionId }: { sessionId: string }) {
   const hasSavedAnswer = !!currentSavedAnswer && !!safeStr(currentSavedAnswer.selectedOptionId);
   const showResultPanel = confirmed || isReviewMode;
   const progressPct = totalFromSession > 0 ? Math.round(((currentIndex + 1) / totalFromSession) * 100) : 0;
+  const questionIdList = normalizeIdList(session.questionIds);
+  const answeredSet = new Set(
+    Object.entries(session.answersMap ?? {})
+      .filter(([, v]) => v && typeof v === "object" && safeStr((v as AnswerMapItem).selectedOptionId))
+      .map(([k]) => k)
+  );
+
+  function jumpTo(index: number) {
+    if (index === currentIndex || index < 0) return;
+    setCurrentIndex(index);
+    void persistIndex(index);
+    setSelectedOptionId(null);
+    setConfirmed(false);
+    setIsCorrect(null);
+    setReportOpen(false);
+    setReportText("");
+    setReportNotice(null);
+  }
+
+  const provaBadge = safeStr((currentQuestion as { examSource?: unknown }).examSource).replace(/[()]/g, "").replace("-", " ");
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
 
-      {/* Barra de progresso */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between text-xs font-semibold text-slate-500 dark:text-slate-400">
-          <span>
-            {isReviewMode ? "Revisão" : "Questão"}{" "}
-            <span className="font-black text-slate-900 dark:text-slate-100">{currentIndex + 1}</span>
-            {" "}de{" "}
-            <span className="font-black text-slate-900 dark:text-slate-100">{totalFromSession || "—"}</span>
-          </span>
-          {isReviewMode ? (
-            <span className="rounded-full border border-slate-200 bg-slate-100 px-2.5 py-0.5 text-[11px] font-bold text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
-              Modo revisão
+      {/* Coluna principal */}
+      <div className="min-w-0 flex-1 space-y-4">
+
+        {/* Barra de progresso */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-xs font-semibold text-vinke-ink3">
+            <span>
+              {isReviewMode ? "Revisão" : "Questão"}{" "}
+              <span className="font-display font-bold text-vinke-ink dark:text-white">{currentIndex + 1}</span>
+              {" "}de{" "}
+              <span className="font-display font-bold text-vinke-ink dark:text-white">{totalFromSession || "—"}</span>
             </span>
-          ) : (
-            <span className="font-black text-slate-900 dark:text-slate-100">{progressPct}%</span>
-          )}
-        </div>
-        <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-          <div
-            className={cn(
-              "h-full rounded-full transition-all duration-500",
-              isReviewMode ? "bg-indigo-500" : "bg-slate-900 dark:bg-blue-500"
+            {isReviewMode ? (
+              <span className="rounded-full bg-vinke-soft px-2.5 py-0.5 text-[11px] font-bold text-vinke dark:bg-vinke/15 dark:text-vinke-lav">
+                Modo revisão
+              </span>
+            ) : (
+              <span className="font-display font-bold text-vinke-ink dark:text-white">{progressPct}%</span>
             )}
-            style={{ width: `${progressPct}%` }}
-          />
+          </div>
+          <div className="h-2 w-full overflow-hidden rounded-full bg-vinke-line2 dark:bg-vinke-navy-sel">
+            <div
+              className="h-full rounded-full bg-vinke transition-all duration-500"
+              style={{ width: `${progressPct}%` }}
+            />
+          </div>
         </div>
+
+        {/* Card da questão */}
+        <div className="rounded-2xl bg-white dark:border dark:border-vinke-navy-line dark:bg-vinke-navy-card">
+
+          {/* Enunciado */}
+          <div className="border-b border-vinke-line2 px-6 py-5 dark:border-vinke-navy-line">
+            {provaBadge ? (
+              <span className="mb-2 inline-block rounded-full bg-vinke-line2 px-2.5 py-0.5 text-[10px] font-bold text-vinke-ink2 dark:bg-vinke-navy dark:text-slate-300">
+                {provaBadge}
+              </span>
+            ) : null}
+            <div
+              className="text-[15px] leading-7 text-vinke-ink dark:text-slate-100 [&_p]:my-2 [&_img]:max-w-full [&_img]:rounded-xl [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:underline"
+              dangerouslySetInnerHTML={{ __html: statementHtml }}
+            />
+            {currentQuestion.imageUrl ? (
+              <img
+                src={currentQuestion.imageUrl}
+                alt="Imagem da questão"
+                className="mt-4 max-h-64 w-auto rounded-xl border border-vinke-line dark:border-vinke-navy-line"
+              />
+            ) : null}
+          </div>
+
+          {/* Alternativas */}
+          <div className="space-y-2.5 px-6 py-5">
+            {currentQuestion.options?.map((opt) => {
+              const isSelected = selectedOptionId === opt.id;
+              const showResult = shouldShowFeedback && !!correctId;
+              const isCorrectOpt = showResult && opt.id === correctId;
+              const isWrongOpt = showResult && isSelected && opt.id !== correctId;
+
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => !confirmed && !isReviewMode && setSelectedOptionId(opt.id)}
+                  disabled={confirmed || isReviewMode}
+                  className={cn(
+                    "w-full rounded-[10px] border-[1.5px] px-4 py-3 text-left outline-none transition",
+                    "focus-visible:ring-[3px] focus-visible:ring-vinke-ring",
+                    !confirmed && !isReviewMode && "cursor-pointer",
+                    confirmed || isReviewMode ? "cursor-default" : "",
+                    isCorrectOpt
+                      ? "border-vinke-green bg-vinke-green-soft dark:bg-vinke-green/10"
+                      : isWrongOpt
+                      ? "border-vinke-red bg-vinke-red-soft dark:bg-vinke-red/10"
+                      : isSelected
+                      ? "border-vinke bg-vinke-soft dark:bg-vinke/15"
+                      : "border-vinke-line bg-white hover:border-vinke-ink4 hover:bg-vinke-offwhite dark:border-vinke-navy-line dark:bg-transparent dark:hover:bg-vinke-navy-sel/50"
+                  )}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={cn(
+                      "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold transition",
+                      isCorrectOpt
+                        ? "bg-vinke-green text-white"
+                        : isWrongOpt
+                        ? "bg-vinke-red text-white"
+                        : isSelected
+                        ? "bg-vinke text-white"
+                        : "border-[1.5px] border-vinke-line text-vinke-ink2 dark:border-vinke-navy-line dark:text-slate-400"
+                    )}>
+                      {isCorrectOpt ? "✓" : isWrongOpt ? "✗" : opt.id}
+                    </div>
+                    <div className="min-w-0 pt-0.5">
+                      <div
+                        className={cn(
+                          "text-sm leading-6 [&_p]:my-1 [&_img]:max-w-full [&_ul]:my-1 [&_ul]:list-disc [&_ul]:pl-5",
+                          isCorrectOpt
+                            ? "font-bold text-vinke-green-text dark:text-vinke-green"
+                            : isWrongOpt
+                            ? "font-bold text-vinke-red dark:text-vinke-red-dark"
+                            : isSelected
+                            ? "font-bold text-vinke-ink dark:text-slate-100"
+                            : "text-vinke-ink dark:text-slate-100"
+                        )}
+                        dangerouslySetInnerHTML={{ __html: sanitizeRichText(safeStr(opt.text)) }}
+                      />
+                      {opt.imageUrl ? (
+                        <img src={opt.imageUrl} alt="" className="mt-2 max-h-40 rounded-lg border border-vinke-line dark:border-vinke-navy-line" />
+                      ) : null}
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Feedback de resultado */}
+          {showResultPanel && (
+            <div className="space-y-3 border-t border-vinke-line2 px-6 py-5 dark:border-vinke-navy-line">
+              {hasSavedAnswer ? (
+                <div className={cn(
+                  "flex items-center gap-3 rounded-[10px] px-4 py-3",
+                  isCorrect
+                    ? "bg-vinke-green-soft dark:bg-vinke-green/10"
+                    : "bg-vinke-red-soft dark:bg-vinke-red/10"
+                )}>
+                  <span className={cn(
+                    "flex h-7 w-7 shrink-0 items-center justify-center rounded-full font-bold text-white",
+                    isCorrect ? "bg-vinke-green" : "bg-vinke-red"
+                  )}>
+                    {isCorrect ? "✓" : "✗"}
+                  </span>
+                  <div>
+                    <div className={cn(
+                      "font-display text-sm font-bold",
+                      isCorrect ? "text-vinke-green-text dark:text-vinke-green" : "text-vinke-red dark:text-vinke-red-dark"
+                    )}>
+                      {isCorrect ? "Você acertou!" : "Você errou."}
+                    </div>
+                    {!isCorrect && correctId && (
+                      <div className="mt-0.5 text-xs font-semibold text-vinke-ink2 dark:text-slate-300">
+                        A resposta correta é a alternativa <strong>{correctId}</strong>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-[10px] bg-vinke-line2 px-4 py-3 text-sm text-vinke-ink2 dark:bg-vinke-navy dark:text-slate-300">
+                  Questão sem resposta registrada.
+                </div>
+              )}
+
+              {explanationText ? (
+                <div className="rounded-[10px] bg-vinke-offwhite px-5 py-4 dark:bg-vinke-navy">
+                  <div className="mb-1.5 text-xs font-bold text-vinke-ink dark:text-slate-100">Resolução comentada</div>
+                  <div
+                    className="text-sm leading-6 text-vinke-ink2 dark:text-slate-300 [&_p]:my-2 [&_strong]:font-bold [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5"
+                    dangerouslySetInnerHTML={{ __html: explanationHtml }}
+                  />
+                </div>
+              ) : null}
+
+              {referenceText ? (
+                <div className="text-xs leading-5 text-vinke-ink3 [&_a]:underline"
+                  dangerouslySetInnerHTML={{ __html: referenceHtml }}
+                />
+              ) : null}
+            </div>
+          )}
+
+          {/* Confirmar */}
+          {!showResultPanel && (
+            <div className="border-t border-vinke-line2 px-6 py-4 dark:border-vinke-navy-line">
+              <button
+                type="button"
+                className="w-full rounded-[9px] bg-vinke px-4 py-3 text-sm font-bold text-white transition hover:bg-vinke-deep disabled:opacity-50"
+                disabled={!selectedOptionId || isSubmitting}
+                onClick={() => void onConfirm()}
+              >
+                {isSubmitting ? "Confirmando…" : "Confirmar resposta"}
+              </button>
+            </div>
+          )}
+
+          {/* Navegação */}
+          <div className="border-t border-vinke-line2 px-6 py-4 dark:border-vinke-navy-line">
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={onPrev}
+                disabled={isFirst}
+                className="flex flex-1 items-center justify-center gap-2 rounded-[9px] border-[1.5px] border-vinke-line px-4 py-3 text-sm font-bold text-vinke-ink transition hover:bg-vinke-offwhite disabled:opacity-40 dark:border-vinke-navy-line dark:text-slate-200 dark:hover:bg-vinke-navy-sel"
+              >
+                <ChevronLeft size={16} aria-hidden="true" />
+                Anterior
+              </button>
+
+              {canFinalize ? (
+                <button
+                  type="button"
+                  className="flex flex-1 items-center justify-center gap-2 rounded-[9px] bg-vinke px-4 py-3 text-sm font-bold text-white transition hover:bg-vinke-deep disabled:opacity-50"
+                  onClick={() => void onFinish()}
+                  disabled={finalizeDisabled}
+                >
+                  {isFinishing ? "Finalizando…" : "Finalizar e corrigir"}
+                  <ChevronRight size={16} aria-hidden="true" />
+                </button>
+              ) : isReviewMode && isLast ? (
+                <button
+                  type="button"
+                  className="flex flex-1 items-center justify-center gap-2 rounded-[9px] bg-vinke px-4 py-3 text-sm font-bold text-white transition hover:bg-vinke-deep"
+                  onClick={() => router.push(`/aluno/simulados/${sessionId}/resultado`)}
+                >
+                  Ver resultado
+                  <ChevronRight size={16} aria-hidden="true" />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="flex flex-1 items-center justify-center gap-2 rounded-[9px] bg-vinke-navy px-4 py-3 text-sm font-bold text-white transition hover:opacity-90 disabled:opacity-40 dark:bg-white dark:text-vinke-navy"
+                  onClick={onNext}
+                  disabled={isReviewMode ? isLast : !confirmed || isLast}
+                >
+                  Próxima
+                  <ChevronRight size={16} aria-hidden="true" />
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Reportar erro */}
+        {showResultPanel && (
+          <div className="space-y-3">
+            {reportNotice ? (
+              <div className={cn(
+                "rounded-[10px] px-4 py-3 text-sm font-semibold",
+                reportNotice.type === "success"
+                  ? "bg-vinke-green-soft text-vinke-green-text dark:bg-vinke-green/10 dark:text-vinke-green"
+                  : "bg-vinke-red-soft text-vinke-red dark:bg-vinke-red/10 dark:text-vinke-red-dark"
+              )}>
+                {reportNotice.text}
+              </div>
+            ) : null}
+
+            {reportOpen ? (
+              <div className="space-y-3 rounded-2xl bg-white p-5 dark:border dark:border-vinke-navy-line dark:bg-vinke-navy-card">
+                <div className="text-sm font-bold text-vinke-ink dark:text-slate-100">Descreva o problema</div>
+                <textarea
+                  className="ui-textarea"
+                  placeholder="Ex: enunciado incompleto, alternativa errada, gabarito incorreto…"
+                  value={reportText}
+                  onChange={(e) => setReportText(e.target.value)}
+                />
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    className="rounded-[9px] bg-vinke px-4 py-2.5 text-xs font-bold text-white transition hover:bg-vinke-deep disabled:opacity-50"
+                    onClick={() => void onSendReport()}
+                    disabled={!safeStr(reportText) || reportSending}
+                  >
+                    {reportSending ? "Enviando…" : "Enviar"}
+                  </button>
+                  <button
+                    type="button"
+                    className="rounded-[9px] border-[1.5px] border-vinke-line px-4 py-2.5 text-xs font-bold text-vinke-ink dark:border-vinke-navy-line dark:text-slate-200"
+                    onClick={() => setReportOpen(false)}
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => { setReportNotice(null); setReportOpen(true); }}
+                className="flex items-center gap-1.5 text-xs font-semibold text-vinke-ink4 transition hover:text-vinke-ink2 dark:hover:text-slate-400"
+              >
+                <Flag size={12} aria-hidden="true" />
+                Reportar erro nesta questão
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Card da questão */}
-      <div className="rounded-2xl border border-slate-200 bg-white dark:border-slate-800/80 dark:bg-slate-900/50">
-
-        {/* Enunciado */}
-        <div className="border-b border-slate-100 px-6 py-5 dark:border-slate-800">
-          <div
-            className="text-[15px] leading-7 text-slate-900 dark:text-slate-100 [&_p]:my-2 [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_a]:underline"
-            dangerouslySetInnerHTML={{ __html: statementHtml }}
-          />
-          {currentQuestion.imageUrl ? (
-            <img
-              src={currentQuestion.imageUrl}
-              alt="Imagem da questão"
-              className="mt-4 max-h-64 w-auto rounded-xl border border-slate-200 dark:border-slate-700"
-            />
-          ) : null}
-        </div>
-
-        {/* Alternativas */}
-        <div className="space-y-2.5 px-6 py-5">
-          {currentQuestion.options?.map((opt) => {
-            const isSelected = selectedOptionId === opt.id;
-            const showResult = shouldShowFeedback && !!correctId;
-            const isCorrectOpt = showResult && opt.id === correctId;
-            const isWrongOpt = showResult && isSelected && opt.id !== correctId;
-
+      {/* Mapa da prova */}
+      <div className="w-full shrink-0 rounded-2xl bg-white p-4 lg:w-[220px] dark:border dark:border-vinke-navy-line dark:bg-vinke-navy-card">
+        <div className="mb-3 font-display text-xs font-bold text-vinke-ink dark:text-white">Mapa da prova</div>
+        <div className="flex flex-wrap gap-1.5">
+          {questionIdList.map((qid, i) => {
+            const isCurrent = i === currentIndex;
+            const isAnswered = answeredSet.has(qid);
             return (
               <button
-                key={opt.id}
+                key={qid}
                 type="button"
-                onClick={() => !confirmed && !isReviewMode && setSelectedOptionId(opt.id)}
-                disabled={confirmed || isReviewMode}
+                onClick={() => jumpTo(i)}
+                title={`Questão ${i + 1}`}
                 className={cn(
-                  "w-full text-left rounded-2xl border px-4 py-3.5 transition outline-none",
-                  "focus-visible:ring-2 focus-visible:ring-slate-900/20",
-                  !confirmed && !isReviewMode && "cursor-pointer hover:shadow-sm",
-                  confirmed || isReviewMode ? "cursor-default" : "",
-                  isCorrectOpt
-                    ? "border-emerald-300 bg-emerald-50 dark:border-emerald-700/50 dark:bg-emerald-950/30"
-                    : isWrongOpt
-                    ? "border-rose-300 bg-rose-50 dark:border-rose-700/50 dark:bg-rose-950/30"
-                    : isSelected
-                    ? "border-slate-900 bg-slate-50 dark:border-slate-400 dark:bg-slate-800/80"
-                    : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 dark:border-slate-700 dark:bg-transparent dark:hover:bg-slate-800/50"
+                  "flex h-[26px] w-[26px] items-center justify-center rounded-lg text-[10px] font-bold transition",
+                  isCurrent
+                    ? "bg-vinke text-white"
+                    : isAnswered
+                    ? "bg-vinke-navy text-white dark:bg-white dark:text-vinke-navy"
+                    : "border-[1.5px] border-vinke-line text-vinke-ink3 hover:border-vinke-ink4 dark:border-vinke-navy-line"
                 )}
               >
-                <div className="flex items-start gap-3">
-                  <div className={cn(
-                    "flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border text-xs font-black transition",
-                    isCorrectOpt
-                      ? "border-emerald-300 bg-emerald-100 text-emerald-800 dark:border-emerald-700/50 dark:bg-emerald-900/50 dark:text-emerald-300"
-                      : isWrongOpt
-                      ? "border-rose-300 bg-rose-100 text-rose-800 dark:border-rose-700/50 dark:bg-rose-900/50 dark:text-rose-300"
-                      : isSelected
-                      ? "border-slate-900 bg-slate-900 text-white dark:border-slate-300 dark:bg-slate-100 dark:text-slate-900"
-                      : "border-slate-200 bg-white text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
-                  )}>
-                    {opt.id}
-                  </div>
-                  <div className="min-w-0 pt-0.5">
-                    <div
-                      className="text-sm leading-6 text-slate-900 dark:text-slate-100 [&_p]:my-1 [&_ul]:my-1 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:my-1 [&_ol]:list-decimal [&_ol]:pl-5"
-                      dangerouslySetInnerHTML={{ __html: sanitizeRichText(safeStr(opt.text)) }}
-                    />
-                    {opt.imageUrl ? (
-                      <img src={opt.imageUrl} alt="" className="mt-2 max-h-40 rounded-lg border border-slate-200 dark:border-slate-700" />
-                    ) : null}
-                  </div>
-                  {isCorrectOpt && <CheckCircle2 size={18} className="ml-auto mt-0.5 shrink-0 text-emerald-500" />}
-                  {isWrongOpt && <XCircle size={18} className="ml-auto mt-0.5 shrink-0 text-rose-500" />}
-                </div>
+                {i + 1}
               </button>
             );
           })}
         </div>
-
-        {/* Feedback de resultado */}
-        {showResultPanel && (
-          <div className="border-t border-slate-100 px-6 py-5 space-y-4 dark:border-slate-800">
-            {hasSavedAnswer ? (
-              <div className={cn(
-                "flex items-center gap-3 rounded-2xl border px-4 py-3.5",
-                isCorrect
-                  ? "border-emerald-200 bg-emerald-50 dark:border-emerald-800/50 dark:bg-emerald-950/40"
-                  : "border-rose-200 bg-rose-50 dark:border-rose-800/50 dark:bg-rose-950/40"
-              )}>
-                {isCorrect
-                  ? <CheckCircle2 size={22} className="shrink-0 text-emerald-500" />
-                  : <XCircle size={22} className="shrink-0 text-rose-500" />
-                }
-                <div>
-                  <div className={cn(
-                    "font-black text-base",
-                    isCorrect ? "text-emerald-800 dark:text-emerald-200" : "text-rose-800 dark:text-rose-200"
-                  )}>
-                    {isCorrect ? "Você acertou!" : "Você errou."}
-                  </div>
-                  {!isCorrect && correctId && (
-                    <div className="mt-0.5 text-xs font-semibold text-rose-600 dark:text-rose-300">
-                      A resposta correta é a alternativa <strong>{correctId}</strong>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                Questão sem resposta registrada.
-              </div>
-            )}
-
-            {explanationText ? (
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 dark:border-slate-700/80 dark:bg-slate-800/50">
-                <div className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">Comentário</div>
-                <div
-                  className="text-sm leading-6 text-slate-700 dark:text-slate-300 [&_p]:my-2 [&_ul]:my-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:my-2 [&_ol]:list-decimal [&_ol]:pl-5 [&_strong]:font-bold"
-                  dangerouslySetInnerHTML={{ __html: explanationHtml }}
-                />
-              </div>
-            ) : null}
-
-            {referenceText ? (
-              <div className="rounded-2xl border border-slate-200 bg-white px-5 py-4 dark:border-slate-700/80 dark:bg-slate-900">
-                <div className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">Referência</div>
-                <div
-                  className="text-sm leading-6 text-slate-600 break-words dark:text-slate-400 [&_a]:underline"
-                  dangerouslySetInnerHTML={{ __html: referenceHtml }}
-                />
-              </div>
-            ) : null}
-          </div>
-        )}
-
-        {/* Botão confirmar */}
-        {!showResultPanel && (
-          <div className="border-t border-slate-100 px-6 py-4 dark:border-slate-800">
-            <Button
-              className="w-full"
-              disabled={!selectedOptionId || isSubmitting}
-              onClick={onConfirm}
-            >
-              {isSubmitting ? "Confirmando…" : "Confirmar resposta"}
-            </Button>
-          </div>
-        )}
-
-        {/* Navegação */}
-        <div className="border-t border-slate-100 px-6 py-4 dark:border-slate-800">
-          <div className="flex items-center gap-3">
-            <Button
-              variant="secondary"
-              onClick={onPrev}
-              disabled={isFirst}
-              className="flex-1 gap-2"
-            >
-              <ChevronLeft size={16} />
-              Anterior
-            </Button>
-
-            {canFinalize ? (
-              <Button className="flex-1 gap-2" onClick={onFinish} disabled={finalizeDisabled}>
-                {isFinishing ? "Finalizando…" : "Finalizar"}
-                <ChevronRight size={16} />
-              </Button>
-            ) : isReviewMode && isLast ? (
-              <Button
-                className="flex-1 gap-2"
-                onClick={() => router.push(`/aluno/simulados/${sessionId}/resultado`)}
-              >
-                Ver resultado
-                <ChevronRight size={16} />
-              </Button>
-            ) : (
-              <Button
-                className="flex-1 gap-2"
-                onClick={onNext}
-                disabled={isReviewMode ? isLast : !confirmed || isLast}
-              >
-                Próxima
-                <ChevronRight size={16} />
-              </Button>
-            )}
-          </div>
+        <div className="mt-3 flex flex-col gap-1 text-[10px] font-semibold text-vinke-ink2 dark:text-slate-400">
+          <span className="flex items-center gap-1.5">
+            <span className="h-2.5 w-2.5 rounded bg-vinke-navy dark:bg-white" /> respondida ({answeredSet.size})
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="h-2.5 w-2.5 rounded bg-vinke" /> atual
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="h-2.5 w-2.5 rounded border-[1.5px] border-vinke-line dark:border-vinke-navy-line" /> em branco
+          </span>
         </div>
       </div>
-
-      {/* Reportar erro — discreto, fora do card */}
-      {showResultPanel && (
-        <div className="space-y-3">
-          {reportNotice ? (
-            <div className={cn(
-              "rounded-2xl border px-4 py-3 text-sm font-semibold",
-              reportNotice.type === "success"
-                ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-300"
-                : "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-900/40 dark:bg-rose-950/30 dark:text-rose-300"
-            )}>
-              {reportNotice.text}
-            </div>
-          ) : null}
-
-          {reportOpen ? (
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 space-y-3 dark:border-slate-700 dark:bg-slate-900/50">
-              <div className="text-sm font-bold text-slate-900 dark:text-slate-100">Descreva o problema</div>
-              <textarea
-                className="ui-textarea"
-                placeholder="Ex: enunciado incompleto, alternativa errada, gabarito incorreto…"
-                value={reportText}
-                onChange={(e) => setReportText(e.target.value)}
-              />
-              <div className="flex gap-2">
-                <Button
-                  onClick={onSendReport}
-                  disabled={!safeStr(reportText) || reportSending}
-                >
-                  {reportSending ? "Enviando…" : "Enviar"}
-                </Button>
-                <Button variant="secondary" onClick={() => setReportOpen(false)}>Cancelar</Button>
-              </div>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => { setReportNotice(null); setReportOpen(true); }}
-              className="flex items-center gap-1.5 text-xs font-semibold text-slate-400 transition hover:text-slate-600 dark:text-slate-600 dark:hover:text-slate-400"
-            >
-              <Flag size={12} />
-              Reportar erro nesta questão
-            </button>
-          )}
-        </div>
-      )}
     </div>
   );
 }
