@@ -3,6 +3,7 @@
 import { useState } from "react";
 import AlunoGuard from "@/components/AlunoGuard";
 import AlunoSidebar from "@/components/aluno/AlunoSidebar";
+import AlunoBottomNav from "@/components/aluno/AlunoBottomNav";
 import AlunoTopHeader from "@/components/aluno/AlunoTopHeader";
 import { AlunoThemeProvider } from "@/components/aluno/AlunoThemeProvider";
 import { ToastProvider } from "@/components/ui/toast";
@@ -22,7 +23,7 @@ export default function AlunoPrivateLayout({
       <ToastProvider>
         <PageHeaderProvider>
           <AlunoGuard>
-            <div className="min-h-screen overflow-x-hidden bg-[radial-gradient(1300px_circle_at_18%_0%,rgba(15,23,42,0.08),transparent_55%),radial-gradient(950px_circle_at_100%_20%,rgba(2,132,199,0.10),transparent_45%)] dark:bg-[radial-gradient(1300px_circle_at_18%_0%,rgba(29,78,216,0.28),transparent_55%),radial-gradient(950px_circle_at_100%_20%,rgba(15,23,42,0.75),transparent_45%),linear-gradient(180deg,#020817_0%,#050d24_100%)]">
+            <div className="min-h-screen overflow-x-hidden bg-vinke-offwhite dark:bg-vinke-navy">
               <div className="flex min-h-screen">
 
                 {/* Sidebar desktop */}
@@ -32,7 +33,7 @@ export default function AlunoPrivateLayout({
                 <div className="flex min-w-0 flex-1 flex-col overflow-x-hidden">
                   <AlunoTopHeader onMenuClick={() => setMobileOpen(true)} />
 
-                  <main className="min-w-0 flex-1 overflow-x-hidden">
+                  <main className="min-w-0 flex-1 overflow-x-hidden pb-16 lg:pb-0">
                     <div className="px-4 sm:px-6 lg:px-10 py-8">
                       <div className="mx-auto w-full max-w-[1200px]">
                         <ErrorBoundary>{children}</ErrorBoundary>
@@ -41,6 +42,9 @@ export default function AlunoPrivateLayout({
                   </main>
                 </div>
               </div>
+
+              {/* Navegação inferior mobile */}
+              <AlunoBottomNav onMenuClick={() => setMobileOpen(true)} />
 
               {/* Drawer mobile */}
               {mobileOpen && (

@@ -181,6 +181,14 @@ export default function NovoSimuladoClient() {
     return Array.from(anos).sort((a, b) => Number(b) - Number(a));
   }, [questionsPool]);
 
+  useEffect(() => {
+    const rawAno = (searchParams.get("ano") || "").trim();
+    if (!rawAno || anosDisponiveis.length === 0) return;
+    if (!anosDisponiveis.includes(rawAno)) return;
+    setSelectedAnos((prev) => (prev.includes(rawAno) ? prev : [...prev, rawAno]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, anosDisponiveis]);
+
   const areaNome = (id: string) => areas.find((a) => a.id === id)?.nome ?? id;
   const areaCurta = (id: string) => {
     const nome = areaNome(id);
