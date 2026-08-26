@@ -48,7 +48,7 @@ export default function RootLayout({
 
                 var theme = "light";
                 if (!isPublicPage) {
-                  var saved = localStorage.getItem("aq.aluno.theme");
+                  var saved = localStorage.getItem("vinke.aluno.theme");
                   if (saved === "dark" || saved === "light") theme = saved;
                 }
 

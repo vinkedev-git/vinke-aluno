@@ -140,7 +140,7 @@ function formatRelativeStudyTime(ms: number) {
 }
 
 const DASHBOARD_CACHE_TTL_MS = 60_000;
-const DASHBOARD_CACHE_KEY = "aq.aluno.dashboard.cache";
+const DASHBOARD_CACHE_KEY = "vinke.aluno.dashboard.cache";
 
 function readDashboardCache(uid: string): DashboardCache | null {
   if (typeof window === "undefined") return null;
@@ -1063,11 +1063,11 @@ export default function DashboardClient() {
             <div className="overflow-x-auto">
               <svg viewBox="0 0 520 210" className="h-52 min-w-[400px] w-full">
                 <defs>
-                  <linearGradient id="aqAreaGrad" x1="0" x2="0" y1="0" y2="1">
+                  <linearGradient id="vkAreaGrad" x1="0" x2="0" y1="0" y2="1">
                     <stop offset="0%" stopColor="#6366f1" stopOpacity="0.22" />
                     <stop offset="100%" stopColor="#6366f1" stopOpacity="0.01" />
                   </linearGradient>
-                  <linearGradient id="aqLineGrad" x1="0" x2="1" y1="0" y2="0">
+                  <linearGradient id="vkLineGrad" x1="0" x2="1" y1="0" y2="0">
                     <stop offset="0%" stopColor="#6366f1" />
                     <stop offset="100%" stopColor="#3b82f6" />
                   </linearGradient>
@@ -1103,7 +1103,7 @@ export default function DashboardClient() {
 
                 {/* Área preenchida */}
                 <path
-                  fill="url(#aqAreaGrad)"
+                  fill="url(#vkAreaGrad)"
                   d={[
                     performanceSeries.map((item, i) => {
                       const step = performanceSeries.length > 1 ? 472 / (performanceSeries.length - 1) : 0;
@@ -1119,7 +1119,7 @@ export default function DashboardClient() {
                 {/* Linha */}
                 <polyline
                   fill="none"
-                  stroke="url(#aqLineGrad)"
+                  stroke="url(#vkLineGrad)"
                   strokeWidth="2.5"
                   strokeLinecap="round"
                   strokeLinejoin="round"

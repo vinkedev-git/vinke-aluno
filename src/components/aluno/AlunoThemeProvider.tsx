@@ -17,7 +17,7 @@ type ThemeContextValue = {
   toggleTheme: () => void;
 };
 
-const STORAGE_KEY = "aq.aluno.theme";
+const STORAGE_KEY = "vinke.aluno.theme";
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 

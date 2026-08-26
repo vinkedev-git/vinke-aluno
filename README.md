@@ -2,7 +2,7 @@
 
 Portal do aluno do **Vinke**, plataforma de questões para o ENEM: caderno de questões, questão do dia, simulados, flashcards e acompanhamento de estudo.
 
-Base derivada do código do Anestesia Questões, com infraestrutura 100% independente (Firebase, Vercel e integrações próprias).
+Base derivada de um produto anterior da casa, com infraestrutura 100% independente (Firebase, Vercel e integrações próprias).
 
 ## Stack
 
