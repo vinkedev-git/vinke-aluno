@@ -1,10 +1,10 @@
 export const runtime = "nodejs";
 
 import { NextRequest, NextResponse } from "next/server";
-import { adminAuth } from "@/lib/firebaseAdmin";
+import { getAdminAuth } from "@/lib/firebaseAdmin";
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const getResend = () => new Resend(process.env.RESEND_API_KEY);
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://app.vinke.app.br";
 const LOGO_URL = `${APP_URL}/logo-icon.png`;
@@ -137,10 +137,10 @@ export async function POST(req: NextRequest) {
     };
 
     // Gera o link de redefinição via Firebase Admin
-    const resetLink = await adminAuth.generatePasswordResetLink(email, actionCodeSettings);
+    const resetLink = await getAdminAuth().generatePasswordResetLink(email, actionCodeSettings);
 
     // Envia o e-mail bonito via Resend
-    await resend.emails.send({
+    await getResend().emails.send({
       from: "Vinke <noreply@vinke.app.br>",
       to: email,
       subject: "Redefinição de senha — Vinke",

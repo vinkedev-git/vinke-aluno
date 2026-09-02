@@ -19,4 +19,8 @@ function getAdminApp(): App {
   });
 }
 
-export const adminAuth = getAuth(getAdminApp());
+// Inicialização preguiçosa: o build do Next importa as rotas de API para
+// coletar metadados, e os segredos só existem em runtime.
+export function getAdminAuth() {
+  return getAuth(getAdminApp());
+}
