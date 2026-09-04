@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { shuffledOptions, optionLabel } from "@/lib/shuffledOptions";
 import { useRouter } from "next/navigation";
 import { auth, db } from "@/lib/firebase";
 import { doc, getDoc } from "firebase/firestore";
@@ -130,7 +131,10 @@ export default function QuestaoDoDiaClient() {
   }, [load]);
 
   const correctId = useMemo(() => (question ? getCorrectId(question) : ""), [question]);
-  const options = useMemo(() => (question ? getOptions(question) : []), [question]);
+  const options = useMemo(
+    () => (question ? shuffledOptions(getOptions(question), `${dateKey}:${safeStr(question.id)}`) : []),
+    [question, dateKey]
+  );
   const statementHtml = useMemo(() => (question ? toHtml(getStatement(question)) : ""), [question]);
   const imageUrl = useMemo(() => (question ? getImageUrl(question) : ""), [question]);
   const explanationHtml = useMemo(() => (question ? toHtml(getExplanation(question)) : ""), [question]);
@@ -234,7 +238,7 @@ export default function QuestaoDoDiaClient() {
 
         {/* Options */}
         <div className="mt-5 space-y-2">
-          {options.map((opt) => {
+          {options.map((opt, optIndex) => {
             const isThisCorrect = revealed && opt.id === correctId;
             const isThisChosen = opt.id === safeStr(selected).toUpperCase();
             const isWrongChosen = revealed && isThisChosen && opt.id !== correctId;
@@ -259,7 +263,7 @@ export default function QuestaoDoDiaClient() {
                   "flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white",
                   isThisCorrect ? "bg-vinke-green" : isWrongChosen ? "bg-vinke-red" : isThisChosen && !revealed ? "bg-vinke" : "bg-vinke-ink4 dark:bg-vinke-navy-sel"
                 )}>
-                  {opt.id}
+                  {optionLabel(optIndex)}
                 </span>
                 <span className="min-w-0 pt-0.5 text-vinke-ink dark:text-slate-200">
                   <span className="block">{opt.text || "—"}</span>

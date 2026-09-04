@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { shuffledOptions, optionLabel } from "@/lib/shuffledOptions";
 import { auth, db } from "@/lib/firebase";
 import {
   addDoc,
@@ -539,8 +540,9 @@ export default function QuizClient({ sessionId }: { sessionId: string }) {
 
           return {
             ...question,
-            // Exibe sempre em ordem A, B, C, D, E (sem embaralhar na tela).
-            options: sortOptionsById(question.options),
+            // Ordem embaralhada por sessão (determinística): impede decorar a
+            // posição da resposta sem quebrar o histórico, que usa o id original.
+            options: shuffledOptions(sortOptionsById(question.options), `${sessionId}:${qid}`),
           };
         })
         .filter(Boolean) as QuestionDoc[];
@@ -961,7 +963,7 @@ export default function QuizClient({ sessionId }: { sessionId: string }) {
 
           {/* Alternativas */}
           <div className="space-y-2.5 px-6 py-5">
-            {currentQuestion.options?.map((opt) => {
+            {currentQuestion.options?.map((opt, optIndex) => {
               const isSelected = selectedOptionId === opt.id;
               const showResult = shouldShowFeedback && !!correctId;
               const isCorrectOpt = showResult && opt.id === correctId;
@@ -998,7 +1000,7 @@ export default function QuizClient({ sessionId }: { sessionId: string }) {
                         ? "bg-vinke text-white"
                         : "border-[1.5px] border-vinke-line text-vinke-ink2 dark:border-vinke-navy-line dark:text-slate-400"
                     )}>
-                      {isCorrectOpt ? "✓" : isWrongOpt ? "✗" : opt.id}
+                      {isCorrectOpt ? "✓" : isWrongOpt ? "✗" : optionLabel(optIndex)}
                     </div>
                     <div className="min-w-0 pt-0.5">
                       <div
