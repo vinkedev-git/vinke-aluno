@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { addDoc, collection, getDocs, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
+import { usePlano, simuladoDoMesJaUsado } from "@/lib/plano";
+import { AvisoLimitePlano } from "@/components/aluno/UpsellPlano";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp, X, Zap, Filter } from "lucide-react";
 import { SkeletonCard } from "@/components/ui/skeleton";
@@ -121,6 +123,14 @@ export default function NovoSimuladoClient() {
   const [qtd, setQtd] = useState<number>(10);
   const [themePickerOpen, setThemePickerOpen] = useState(false);
   const [themeQuery, setThemeQuery] = useState("");
+
+  // Plano gratuito: 1 simulado por mês
+  const plano = usePlano();
+  const [limiteMensalAtingido, setLimiteMensalAtingido] = useState(false);
+  useEffect(() => {
+    if (!plano.gratuito || !user) return;
+    void simuladoDoMesJaUsado(user.uid).then(setLimiteMensalAtingido).catch(() => {});
+  }, [plano.gratuito, user]);
 
   useEffect(() => {
     const run = async () => {
@@ -267,6 +277,11 @@ export default function NovoSimuladoClient() {
     if (!user) return;
     setCreating(true);
     try {
+      // Revalida o limite na hora de criar (o estado pode estar defasado)
+      if (plano.gratuito && (await simuladoDoMesJaUsado(user.uid))) {
+        setLimiteMensalAtingido(true);
+        return;
+      }
       const selectedQuestions = await pickQuestions();
       const questionIds = selectedQuestions.map((q) => q.id);
       if (!questionIds.length) return;
@@ -293,7 +308,7 @@ export default function NovoSimuladoClient() {
     }
   };
 
-  const canCreate = !creating && availableCount > 0;
+  const canCreate = !creating && availableCount > 0 && !(plano.gratuito && limiteMensalAtingido);
   const hasFilters = selectedAnos.length > 0 || selectedAreas.length > 0 || selectedAssuntos.length > 0;
 
   if (loading) {
@@ -471,6 +486,15 @@ export default function NovoSimuladoClient() {
           </div>
         )}
       </div>
+
+      {plano.gratuito && limiteMensalAtingido && (
+        <div className="mt-6">
+          <AvisoLimitePlano
+            titulo="Você já usou o simulado deste mês"
+            descricao="O plano gratuito inclui 1 simulado por mês. Assine para criar simulados ilimitados."
+          />
+        </div>
+      )}
 
       {/* BARRA FIXA NO RODAPÉ */}
       <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-vinke-line bg-white/95 backdrop-blur dark:border-vinke-navy-line dark:bg-vinke-navy/95">

@@ -258,6 +258,16 @@ export default function LoginClient() {
                 ) : null}
               </div>
 
+              <p className="text-center text-sm font-medium text-vinke-ink3">
+                Ainda não tem conta?{" "}
+                <a
+                  href="/aluno/cadastro"
+                  className="font-semibold text-vinke transition hover:text-vinke-deep hover:underline dark:text-vinke-lav"
+                >
+                  Criar conta grátis
+                </a>
+              </p>
+
               <div className="rounded-2xl bg-vinke-offwhite px-3 py-2 text-xs text-vinke-ink2 dark:bg-vinke-navy dark:text-slate-300">
                 Dica: se você recebeu o e-mail “Crie sua senha”, você também pode usar “Esqueci minha senha”.
               </div>

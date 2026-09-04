@@ -14,6 +14,8 @@ import {
   where,
 } from "firebase/firestore";
 import { SkeletonList } from "@/components/ui/skeleton";
+import { usePlano, simuladoDoMesJaUsado } from "@/lib/plano";
+import { AvisoLimitePlano } from "@/components/aluno/UpsellPlano";
 
 function cn(...xs: Array<string | false | null | undefined>) {
   return xs.filter(Boolean).join(" ");
@@ -39,6 +41,8 @@ export default function ProvasPageClient() {
   const [err, setErr] = useState("");
   const [rows, setRows] = useState<YearRow[]>([]);
   const [creating, setCreating] = useState<number | null>(null);
+  const plano = usePlano();
+  const [limiteMensalAtingido, setLimiteMensalAtingido] = useState(false);
 
   const load = useCallback(async () => {
     const u = auth.currentUser;
@@ -111,6 +115,12 @@ export default function ProvasPageClient() {
     if (!u || creating != null) return;
     setCreating(year);
     try {
+      // Plano gratuito: resolver uma prova completa conta como o simulado do mês
+      if (plano.gratuito && (await simuladoDoMesJaUsado(u.uid))) {
+        setLimiteMensalAtingido(true);
+        setCreating(null);
+        return;
+      }
       const qSnap = await getDocs(
         query(collection(db, "questionsBank"), where("examYear", "==", year))
       );
@@ -164,6 +174,13 @@ export default function ProvasPageClient() {
           {totalDisponiveis ? ` ${totalDisponiveis.toLocaleString("pt-BR")} questões no banco.` : ""}
         </span>
       </div>
+
+      {limiteMensalAtingido && (
+        <AvisoLimitePlano
+          titulo="Você já usou o simulado deste mês"
+          descricao="No plano gratuito, resolver uma prova completa usa o seu simulado mensal. Assine para treinar sem limites."
+        />
+      )}
 
       {err ? (
         <div className="flex flex-col gap-2 rounded-2xl bg-vinke-red-soft p-5 dark:bg-vinke-red/10">

@@ -18,6 +18,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { recordAnswer } from "@/lib/study-tracking";
+import { usePlano, useQuestoesHoje, LIMITES_GRATIS } from "@/lib/plano";
+import { AvisoLimitePlano } from "@/components/aluno/UpsellPlano";
 import { usePageHeader } from "@/components/aluno/AlunoPageHeaderContext";
 import { ChevronLeft, ChevronRight, CheckCircle2, XCircle, AlertCircle, Flag } from "lucide-react";
 import { SkeletonCard } from "@/components/ui/skeleton";
@@ -374,6 +376,12 @@ export default function QuizClient({ sessionId }: { sessionId: string }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFinishing, setIsFinishing] = useState(false);
 
+  // Plano gratuito: 10 questões respondidas por dia
+  const plano = usePlano();
+  const questoesHoje = useQuestoesHoje();
+  const limiteDiarioAtingido =
+    plano.gratuito && questoesHoje != null && questoesHoje >= LIMITES_GRATIS.questoesPorDia;
+
   // Cronômetro — tempo total do simulado (persistido em timeSpentMs)
   const [clockMs, setClockMs] = useState(0);
   const clockBaseRef = useRef(0);
@@ -479,6 +487,16 @@ export default function QuizClient({ sessionId }: { sessionId: string }) {
       null
     );
   }, [currentQuestion]);
+
+  // Letra EXIBIDA da alternativa correta (posição no embaralhamento da tela,
+  // não o id original do caderno).
+  const correctLabel = useMemo(() => {
+    if (!correctId) return null;
+    const idx = (currentQuestion?.options ?? []).findIndex(
+      (o) => safeStr(o?.id) === safeStr(correctId)
+    );
+    return idx >= 0 ? optionLabel(idx) : null;
+  }, [correctId, currentQuestion]);
 
   const explanationText = useMemo(() => {
     const raw =
@@ -619,6 +637,7 @@ export default function QuizClient({ sessionId }: { sessionId: string }) {
 
   async function onConfirm() {
     if (!session || !currentQuestion || !selectedOptionId || isReviewMode) return;
+    if (limiteDiarioAtingido) return;
 
     const u = auth.currentUser;
     if (!u) return;
@@ -1049,9 +1068,9 @@ export default function QuizClient({ sessionId }: { sessionId: string }) {
                     )}>
                       {isCorrect ? "Você acertou!" : "Você errou."}
                     </div>
-                    {!isCorrect && correctId && (
+                    {!isCorrect && correctLabel && (
                       <div className="mt-0.5 text-xs font-semibold text-vinke-ink2 dark:text-slate-300">
-                        A resposta correta é a alternativa <strong>{correctId}</strong>
+                        A resposta correta é a alternativa <strong>{correctLabel}</strong>
                       </div>
                     )}
                   </div>
@@ -1082,11 +1101,17 @@ export default function QuizClient({ sessionId }: { sessionId: string }) {
 
           {/* Confirmar */}
           {!showResultPanel && (
-            <div className="border-t border-vinke-line2 px-6 py-4 dark:border-vinke-navy-line">
+            <div className="space-y-3 border-t border-vinke-line2 px-6 py-4 dark:border-vinke-navy-line">
+              {limiteDiarioAtingido && (
+                <AvisoLimitePlano
+                  titulo="Você usou suas 10 questões de hoje"
+                  descricao="Amanhã tem mais 10. Para treinar sem limite diário, assine um plano."
+                />
+              )}
               <button
                 type="button"
                 className="w-full rounded-[9px] bg-vinke px-4 py-3 text-sm font-bold text-white transition hover:bg-vinke-deep disabled:opacity-50"
-                disabled={!selectedOptionId || isSubmitting}
+                disabled={!selectedOptionId || isSubmitting || limiteDiarioAtingido}
                 onClick={() => void onConfirm()}
               >
                 {isSubmitting ? "Confirmando…" : "Confirmar resposta"}
