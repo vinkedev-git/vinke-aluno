@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { usePathname } from "next/navigation";
 import { onAuthStateChanged, User } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, onSnapshot } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { Menu } from "lucide-react";
 import { usePageHeader } from "@/components/aluno/AlunoPageHeaderContext";
@@ -36,28 +36,24 @@ export default function AlunoTopHeader({
     return () => unsub();
   }, []);
 
+  // onSnapshot para o nome refletir na hora quando o aluno salva o perfil
+  // (o layout não remonta ao navegar, então uma leitura única ficava velha).
   useEffect(() => {
-    let active = true;
-
-    async function loadProfileName() {
-      if (!user?.uid) {
-        if (active) setProfileName("");
-        return;
-      }
-
-      try {
-        const snap = await getDoc(doc(db, "users", user.uid));
-        const rawName = snap.exists() ? snap.data()?.name : "";
-        if (active) setProfileName(String(rawName ?? "").trim());
-      } catch {
-        if (active) setProfileName("");
-      }
+    if (!user?.uid) {
+      setProfileName("");
+      return;
     }
 
-    void loadProfileName();
-    return () => {
-      active = false;
-    };
+    const unsub = onSnapshot(
+      doc(db, "users", user.uid),
+      (snap) => {
+        const data = snap.exists() ? (snap.data() as { name?: unknown; nome?: unknown }) : null;
+        const rawName = data?.name ?? data?.nome ?? "";
+        setProfileName(String(rawName).trim());
+      },
+      () => setProfileName("")
+    );
+    return () => unsub();
   }, [user?.uid]);
 
   const breadcrumb = useMemo(() => getBreadcrumb(pathname), [pathname]);

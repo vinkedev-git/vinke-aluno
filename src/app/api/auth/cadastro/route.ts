@@ -63,6 +63,7 @@ export async function POST(req: NextRequest) {
       db.collection("users").doc(user.uid),
       {
         uid: user.uid,
+        name: nome,
         nome,
         email,
         createdAt: FieldValue.serverTimestamp(),
