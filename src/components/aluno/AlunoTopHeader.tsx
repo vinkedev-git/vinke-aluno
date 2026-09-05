@@ -36,24 +36,49 @@ export default function AlunoTopHeader({
     return () => unsub();
   }, []);
 
-  // onSnapshot para o nome refletir na hora quando o aluno salva o perfil
+  // onSnapshot para o nome refletir na hora quando o perfil muda
   // (o layout não remonta ao navegar, então uma leitura única ficava velha).
+  // O nome pode estar em dois lugares: users/{uid}/profile/main (fonte
+  // canônica, é onde o admin grava) ou users/{uid}.name (formato antigo
+  // do portal) — o profile/main tem prioridade.
   useEffect(() => {
     if (!user?.uid) {
       setProfileName("");
       return;
     }
 
-    const unsub = onSnapshot(
+    let nameFromProfile = "";
+    let nameFromUser = "";
+    const apply = () => setProfileName(nameFromProfile || nameFromUser);
+
+    const unsubProfile = onSnapshot(
+      doc(db, "users", user.uid, "profile", "main"),
+      (snap) => {
+        const data = snap.exists() ? (snap.data() as { name?: unknown }) : null;
+        nameFromProfile = String(data?.name ?? "").trim();
+        apply();
+      },
+      () => {
+        nameFromProfile = "";
+        apply();
+      }
+    );
+    const unsubUser = onSnapshot(
       doc(db, "users", user.uid),
       (snap) => {
         const data = snap.exists() ? (snap.data() as { name?: unknown; nome?: unknown }) : null;
-        const rawName = data?.name ?? data?.nome ?? "";
-        setProfileName(String(rawName).trim());
+        nameFromUser = String(data?.name ?? data?.nome ?? "").trim();
+        apply();
       },
-      () => setProfileName("")
+      () => {
+        nameFromUser = "";
+        apply();
+      }
     );
-    return () => unsub();
+    return () => {
+      unsubProfile();
+      unsubUser();
+    };
   }, [user?.uid]);
 
   const breadcrumb = useMemo(() => getBreadcrumb(pathname), [pathname]);
