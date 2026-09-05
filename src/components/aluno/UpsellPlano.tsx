@@ -7,7 +7,7 @@
 import { Lock } from "lucide-react";
 import { usePlano } from "@/lib/plano";
 
-const LP_PLANOS_URL = "https://vinke-swart.vercel.app/#planos";
+const LP_PLANOS_URL = "https://vinke.app.br/#planos";
 
 /**
  * Envolve uma página que é exclusiva de plano pago: mostra o upsell para

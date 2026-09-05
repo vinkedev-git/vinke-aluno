@@ -6,7 +6,7 @@ import { Resend } from "resend";
 
 const getResend = () => new Resend(process.env.RESEND_API_KEY);
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://app.vinke.app.br";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://aluno.vinke.app.br";
 const LOGO_URL = `${APP_URL}/logo-icon.png`;
 
 function buildEmailHtml(resetLink: string): string {
@@ -131,7 +131,7 @@ export async function POST(req: NextRequest) {
       // Para que o link vá DIRETO para nossa página (sem passar pelo Firebase),
       // é necessário configurar o "Custom action URL" no Firebase Console:
       //   Authentication > Templates > Password reset > (lápis) > Customize action URL
-      //   → https://app.vinke.app.br/aluno/redefinir-senha
+      //   → https://aluno.vinke.app.br/aluno/redefinir-senha
       url: `${APP_URL}/aluno/entrar`,
       handleCodeInApp: false,
     };

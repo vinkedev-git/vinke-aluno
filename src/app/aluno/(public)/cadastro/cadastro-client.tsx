@@ -194,7 +194,7 @@ export default function CadastroClient() {
               <p className="text-center text-[11px] leading-5 text-vinke-ink4">
                 Ao criar a conta, você concorda com os{" "}
                 <a
-                  href="https://vinke-swart.vercel.app/termos"
+                  href="https://vinke.app.br/termos"
                   target="_blank"
                   rel="noreferrer"
                   className="underline hover:text-vinke-ink2"
@@ -203,7 +203,7 @@ export default function CadastroClient() {
                 </a>{" "}
                 e a{" "}
                 <a
-                  href="https://vinke-swart.vercel.app/privacidade"
+                  href="https://vinke.app.br/privacidade"
                   target="_blank"
                   rel="noreferrer"
                   className="underline hover:text-vinke-ink2"
