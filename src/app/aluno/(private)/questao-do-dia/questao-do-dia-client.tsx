@@ -205,7 +205,7 @@ export default function QuestaoDoDiaClient() {
             <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M13 2 4 14h6l-1 8 9-12h-6z" fill="#F0A63A" /></svg>
             <div className="flex flex-col">
               <span className="font-display text-lg font-bold leading-tight text-white">{streak} {streak === 1 ? "dia" : "dias"}</span>
-              <span className="text-[9px] font-semibold tracking-[0.08em] text-vinke-ink3">DE SEQUÊNCIA</span>
+              <span className="text-[9px] font-semibold tracking-[0.08em] text-slate-400">DE SEQUÊNCIA</span>
             </div>
           </div>
         ) : null}

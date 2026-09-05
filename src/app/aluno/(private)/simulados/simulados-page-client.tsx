@@ -177,11 +177,11 @@ export default function SimuladosPageClient() {
         return (
           <div key={s.id} className="flex flex-col gap-3 rounded-2xl bg-vinke-navy p-5 sm:flex-row sm:items-center sm:gap-4">
             <div className="flex flex-1 flex-col gap-0.5">
-              <span className="text-[9px] font-semibold tracking-[0.12em] text-vinke-ink3">EM ANDAMENTO</span>
+              <span className="text-[9px] font-semibold tracking-[0.12em] text-slate-400">EM ANDAMENTO</span>
               <span className="font-display text-[15px] font-bold text-white">
                 {main} · {total} questões
               </span>
-              <span className="text-[11px] font-medium text-vinke-ink3">
+              <span className="text-[11px] font-medium text-slate-400">
                 {answered} respondidas · atualizado {formatDateShort(s.updatedAt)}
               </span>
             </div>

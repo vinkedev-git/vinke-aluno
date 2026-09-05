@@ -334,7 +334,7 @@ export default function ResultadoClient({ sessionId }: { sessionId: string }) {
       <div className="flex flex-col gap-3.5 lg:flex-row">
         <div className="flex flex-[1.2] items-center gap-6 rounded-2xl bg-vinke-navy p-6">
           <div className="flex min-w-0 flex-col gap-1">
-            <span className="text-[10px] font-semibold tracking-[0.12em] text-vinke-ink3">
+            <span className="text-[10px] font-semibold tracking-[0.12em] text-slate-400">
               SEU RESULTADO
             </span>
             <div className="flex flex-wrap items-baseline gap-2.5">
@@ -347,7 +347,7 @@ export default function ResultadoClient({ sessionId }: { sessionId: string }) {
                 </span>
               ) : null}
             </div>
-            <span className="text-xs font-medium text-vinke-ink3">
+            <span className="text-xs font-medium text-slate-400">
               {stats.correct} acertos de {stats.answered} respondidas
               {stats.blank > 0 ? ` · ${stats.blank} em branco` : ""}
               {(() => {

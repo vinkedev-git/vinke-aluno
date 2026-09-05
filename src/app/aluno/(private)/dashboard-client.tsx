@@ -553,7 +553,7 @@ export default function DashboardClient() {
       {/* Linha herói: desempenho · meta · hoje */}
       <div className="flex flex-col gap-3.5 lg:flex-row">
         <div className="flex flex-[1.4] flex-col gap-1 rounded-2xl bg-vinke-navy p-6">
-          <span className="text-[10px] font-semibold tracking-[0.12em] text-vinke-ink3">
+          <span className="text-[10px] font-semibold tracking-[0.12em] text-slate-400">
             TAXA DE ACERTO GERAL
           </span>
           <div className="flex flex-wrap items-baseline gap-2.5">
@@ -573,7 +573,7 @@ export default function DashboardClient() {
               </span>
             ) : null}
           </div>
-          <span className="text-xs font-medium text-vinke-ink3">
+          <span className="text-xs font-medium text-slate-400">
             média de acertos em tudo que você respondeu
           </span>
         </div>
