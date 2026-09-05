@@ -255,11 +255,12 @@ export default function AssinaturaClient() {
             <div className="rounded-3xl bg-vinke-navy p-6">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div className="min-w-0">
-                  <div className="text-[10px] font-semibold tracking-[0.12em] text-vinke-ink3">SEU PLANO</div>
+                  {/* Card sempre navy: cores claras fixas, sem tokens de tinta do tema */}
+                  <div className="text-[10px] font-semibold tracking-[0.12em] text-slate-400">SEU PLANO</div>
                   <div className="mt-1 truncate font-display text-xl font-bold text-white">{planName}</div>
-                  <div className="mt-2 text-sm text-vinke-ink2 dark:text-slate-300">
+                  <div className="mt-2 text-sm text-slate-300">
                     E-mail:{" "}
-                    <span className="font-semibold text-vinke-ink dark:text-slate-100">
+                    <span className="font-semibold text-slate-100">
                       {ent?.email || user?.email || "—"}
                     </span>
                   </div>
@@ -277,7 +278,7 @@ export default function AssinaturaClient() {
 
               <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
                 <div className="rounded-2xl bg-vinke-navy-card p-5">
-                  <div className="text-xs text-vinke-ink3">Vencimento</div>
+                  <div className="text-xs text-slate-400">Vencimento</div>
                   <div className="mt-2 font-display text-2xl font-bold text-white">{vencimento}</div>
                   <div className="mt-1 text-sm text-slate-300">
                     {remainingDays === null ? "—" : expired ? "Expirada" : `${remainingDays} dia(s) restantes`}
@@ -285,24 +286,24 @@ export default function AssinaturaClient() {
                 </div>
 
                 <div className="rounded-2xl bg-vinke-navy-card p-5">
-                  <div className="text-xs text-vinke-ink3">Valor</div>
+                  <div className="text-xs text-slate-400">Valor</div>
                   <div className="mt-2 font-display text-2xl font-bold text-white">{paidText}</div>
                   <div className="mt-1 text-sm text-slate-300">{ent?.currency || "BRL"}</div>
                 </div>
 
                 <div className="rounded-2xl bg-vinke-navy-card p-5">
-                  <div className="text-xs text-vinke-ink3">Produto</div>
+                  <div className="text-xs text-slate-400">Produto</div>
                   <div className="mt-2 text-sm font-semibold text-white">
                     {ent?.productId ? `ID: ${ent.productId}` : "—"}
                   </div>
-                  <div className="mt-2 text-xs text-vinke-ink3">
+                  <div className="mt-2 text-xs text-slate-400">
                     Origem: <span className="font-semibold text-slate-200">{ent?.source || "—"}</span>
                   </div>
                 </div>
               </div>
 
               <div className="mt-6 flex flex-col gap-3 border-t border-vinke-navy-line pt-5 sm:flex-row sm:items-center sm:justify-between">
-                <div className="text-sm text-vinke-ink3">
+                <div className="text-sm text-slate-400">
                   Precisa de ajuda com sua assinatura? Fale com o suporte.
                 </div>
 
