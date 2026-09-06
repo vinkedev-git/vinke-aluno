@@ -9,6 +9,7 @@ const getResend = () => new Resend(process.env.RESEND_API_KEY);
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://aluno.vinke.app.br";
 const LOGO_URL = `${APP_URL}/logo-icon.png`;
 
+// Identidade Vinke: navy #0B0A21, roxo #6236F0, lavanda #8B6DFF, offwhite #F7F6F2
 function buildEmailHtml(resetLink: string): string {
   return `<!DOCTYPE html>
 <html lang="pt-BR">
@@ -17,18 +18,18 @@ function buildEmailHtml(resetLink: string): string {
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Redefinição de senha</title>
 </head>
-<body style="margin:0;padding:0;background-color:#f1f5f9;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f1f5f9;padding:40px 16px;">
+<body style="margin:0;padding:0;background-color:#F7F6F2;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#F7F6F2;padding:40px 16px;">
     <tr>
       <td align="center">
         <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">
 
           <!-- Header -->
           <tr>
-            <td align="center" style="background:linear-gradient(135deg,#1e3a8a 0%,#1d4ed8 50%,#2563eb 100%);border-radius:20px 20px 0 0;padding:36px 32px 32px;">
+            <td align="center" style="background-color:#0B0A21;border-radius:20px 20px 0 0;padding:36px 32px 32px;">
               <img src="${LOGO_URL}" alt="Vinke" width="64" height="64"
                 style="display:block;margin:0 auto 16px;border-radius:16px;" />
-              <p style="margin:0;font-size:13px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:rgba(147,197,253,0.9);">
+              <p style="margin:0;font-size:13px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:#8B6DFF;">
                 Vinke
               </p>
             </td>
@@ -36,11 +37,11 @@ function buildEmailHtml(resetLink: string): string {
 
           <!-- Body -->
           <tr>
-            <td style="background:#ffffff;padding:40px 40px 32px;border-left:1px solid #e2e8f0;border-right:1px solid #e2e8f0;">
-              <h1 style="margin:0 0 12px;font-size:24px;font-weight:700;color:#0f172a;line-height:1.3;">
+            <td style="background:#ffffff;padding:40px 40px 32px;border-left:1px solid #E9E7F4;border-right:1px solid #E9E7F4;">
+              <h1 style="margin:0 0 12px;font-size:24px;font-weight:700;color:#0B0A21;line-height:1.3;">
                 Redefinição de senha
               </h1>
-              <p style="margin:0 0 24px;font-size:15px;color:#475569;line-height:1.6;">
+              <p style="margin:0 0 24px;font-size:15px;color:#5D5A72;line-height:1.6;">
                 Recebemos uma solicitação para redefinir a senha da sua conta.
                 Clique no botão abaixo para criar uma nova senha:
               </p>
@@ -48,7 +49,7 @@ function buildEmailHtml(resetLink: string): string {
               <!-- CTA Button -->
               <table cellpadding="0" cellspacing="0" style="margin:0 0 28px;">
                 <tr>
-                  <td align="center" style="border-radius:12px;background:linear-gradient(135deg,#1d4ed8,#2563eb);">
+                  <td align="center" style="border-radius:12px;background-color:#6236F0;">
                     <a href="${resetLink}"
                       style="display:inline-block;padding:14px 32px;font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:12px;letter-spacing:0.01em;">
                       Redefinir minha senha
@@ -57,18 +58,18 @@ function buildEmailHtml(resetLink: string): string {
                 </tr>
               </table>
 
-              <p style="margin:0 0 8px;font-size:13px;color:#94a3b8;line-height:1.6;">
+              <p style="margin:0 0 8px;font-size:13px;color:#8A87A0;line-height:1.6;">
                 Se o botão não funcionar, copie e cole o link abaixo no seu navegador:
               </p>
-              <p style="margin:0 0 28px;font-size:12px;color:#64748b;word-break:break-all;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:10px 12px;">
+              <p style="margin:0 0 28px;font-size:12px;color:#5D5A72;word-break:break-all;background:#F1EFFB;border:1px solid #EDE8FD;border-radius:8px;padding:10px 12px;">
                 ${resetLink}
               </p>
 
               <!-- Warning box -->
               <table cellpadding="0" cellspacing="0" width="100%">
                 <tr>
-                  <td style="background:#fefce8;border:1px solid #fde68a;border-radius:10px;padding:14px 16px;">
-                    <p style="margin:0;font-size:13px;color:#92400e;line-height:1.5;">
+                  <td style="background:#FDF6EC;border:1px solid #F0DBB8;border-radius:10px;padding:14px 16px;">
+                    <p style="margin:0;font-size:13px;color:#B4650A;line-height:1.5;">
                       <strong>Este link expira em 1 hora.</strong> Se você não solicitou a redefinição de senha, ignore este e-mail — sua conta permanece segura.
                     </p>
                   </td>
@@ -79,11 +80,11 @@ function buildEmailHtml(resetLink: string): string {
 
           <!-- Footer -->
           <tr>
-            <td style="background:#f8fafc;border:1px solid #e2e8f0;border-top:none;border-radius:0 0 20px 20px;padding:24px 40px;">
-              <p style="margin:0 0 6px;font-size:13px;color:#94a3b8;text-align:center;">
-                Enviado por <strong style="color:#64748b;">Vinke</strong>
+            <td style="background:#F7F6F2;border:1px solid #E9E7F4;border-top:none;border-radius:0 0 20px 20px;padding:24px 40px;">
+              <p style="margin:0 0 6px;font-size:13px;color:#8A87A0;text-align:center;">
+                Enviado por <strong style="color:#6236F0;">Vinke</strong> · vinke.app.br
               </p>
-              <p style="margin:0;font-size:12px;color:#cbd5e1;text-align:center;">
+              <p style="margin:0;font-size:12px;color:#B9B6C6;text-align:center;">
                 © ${new Date().getFullYear()} Vinke — Todos os direitos reservados
               </p>
             </td>
