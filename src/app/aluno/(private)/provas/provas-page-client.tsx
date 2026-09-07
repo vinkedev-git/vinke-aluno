@@ -4,17 +4,18 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { auth, db } from "@/lib/firebase";
 import {
-  addDoc,
   collection,
+  doc,
   getCountFromServer,
   getDocs,
   orderBy,
   query,
   serverTimestamp,
   where,
+  writeBatch,
 } from "firebase/firestore";
 import { SkeletonList } from "@/components/ui/skeleton";
-import { usePlano, simuladoDoMesJaUsado } from "@/lib/plano";
+import { usePlano, simuladoDoMesJaUsado, brtMesKey } from "@/lib/plano";
 import { AvisoLimitePlano } from "@/components/aluno/UpsellPlano";
 
 function cn(...xs: Array<string | false | null | undefined>) {
@@ -131,7 +132,9 @@ export default function ProvasPageClient() {
       const questionIds = questions.map((q) => q.id);
       if (!questionIds.length) return;
 
-      const ref = await addDoc(collection(db, "users", u.uid, "sessions"), {
+      const ref = doc(collection(db, "users", u.uid, "sessions"));
+      const batch = writeBatch(db);
+      batch.set(ref, {
         title: `Prova completa • ENEM ${year}`,
         titleDisplay: `Prova completa · ENEM ${year}`,
         kind: "prova_oficial",
@@ -154,9 +157,17 @@ export default function ProvasPageClient() {
         updatedAt: serverTimestamp(),
         createdAt: serverTimestamp(),
       });
+      // Gratuito: virada do mês no contador no mesmo batch (regra do servidor)
+      if (plano.gratuito) {
+        batch.set(doc(db, "users", u.uid, "meta", "planUso"), { simuladoMes: brtMesKey() }, { merge: true });
+      }
+      await batch.commit();
       router.push(`/aluno/simulados/${ref.id}`);
     } catch (e) {
       console.error(e);
+      if (plano.gratuito && (e as { code?: string })?.code === "permission-denied") {
+        setLimiteMensalAtingido(true);
+      }
     } finally {
       setCreating(null);
     }

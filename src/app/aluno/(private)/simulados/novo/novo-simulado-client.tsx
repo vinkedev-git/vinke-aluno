@@ -2,9 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { addDoc, collection, getDocs, serverTimestamp } from "firebase/firestore";
+import { collection, doc, getDocs, serverTimestamp, writeBatch } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
-import { usePlano, simuladoDoMesJaUsado } from "@/lib/plano";
+import { usePlano, simuladoDoMesJaUsado, brtMesKey } from "@/lib/plano";
 import { AvisoLimitePlano } from "@/components/aluno/UpsellPlano";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp, X, Zap, Filter } from "lucide-react";
@@ -285,7 +285,9 @@ export default function NovoSimuladoClient() {
       const selectedQuestions = await pickQuestions();
       const questionIds = selectedQuestions.map((q) => q.id);
       if (!questionIds.length) return;
-      const sessionRef = await addDoc(collection(db, "users", user.uid, "sessions"), {
+      const sessionRef = doc(collection(db, "users", user.uid, "sessions"));
+      const batch = writeBatch(db);
+      batch.set(sessionRef, {
         title, titleDisplay, status: "in_progress",
         filters: {
           anos: selectedAnos,
@@ -300,9 +302,18 @@ export default function NovoSimuladoClient() {
         answeredCount: 0, correctCount: 0, wrongCount: 0, scorePercent: 0,
         updatedAt: serverTimestamp(), createdAt: serverTimestamp(),
       });
+      // Gratuito: as regras exigem a "virada do mês" no contador no mesmo
+      // batch — é o que garante 1 simulado/mês no servidor.
+      if (plano.gratuito) {
+        batch.set(doc(db, "users", user.uid, "meta", "planUso"), { simuladoMes: brtMesKey() }, { merge: true });
+      }
+      await batch.commit();
       router.push(`/aluno/simulados/${sessionRef.id}`);
     } catch (e) {
       console.error(e);
+      if (plano.gratuito && (e as { code?: string })?.code === "permission-denied") {
+        setLimiteMensalAtingido(true);
+      }
     } finally {
       setCreating(false);
     }

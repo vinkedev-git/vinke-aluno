@@ -39,6 +39,30 @@ export function isPlanoGratuito(entitlement: { plan?: unknown } | null | undefin
   return String(entitlement?.plan ?? "") === "gratuito";
 }
 
+// ─── Contador de uso do plano gratuito (users/{uid}/meta/planUso) ────────────
+// As firestore.rules exigem que respostas do quiz e criações de simulado do
+// plano gratuito atualizem esse contador NA MESMA transação, com as datas
+// calculadas no fuso de Brasília (UTC-3, igual às regras).
+
+function brtDate(): Date {
+  return new Date(Date.now() - 3 * 3600 * 1000);
+}
+
+/** YYYY-MM-DD em Brasília — precisa bater com diaHoje() das firestore.rules */
+export function brtDiaKey(): string {
+  const d = brtDate();
+  const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(d.getUTCDate()).padStart(2, "0");
+  return `${d.getUTCFullYear()}-${mm}-${dd}`;
+}
+
+/** YYYY-MM em Brasília — precisa bater com mesAtual() das firestore.rules */
+export function brtMesKey(): string {
+  const d = brtDate();
+  const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
+  return `${d.getUTCFullYear()}-${mm}`;
+}
+
 // Mesmo formato do dayKey() de study-tracking.ts (data local YYYY-MM-DD)
 function dayKeyHoje(): string {
   const d = new Date();

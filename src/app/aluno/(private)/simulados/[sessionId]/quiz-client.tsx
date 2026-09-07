@@ -18,7 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { recordAnswer } from "@/lib/study-tracking";
-import { usePlano, useQuestoesHoje, LIMITES_GRATIS } from "@/lib/plano";
+import { usePlano, useQuestoesHoje, LIMITES_GRATIS, brtDiaKey } from "@/lib/plano";
 import { AvisoLimitePlano } from "@/components/aluno/UpsellPlano";
 import { usePageHeader } from "@/components/aluno/AlunoPageHeaderContext";
 import { ChevronLeft, ChevronRight, CheckCircle2, XCircle, AlertCircle, Flag } from "lucide-react";
@@ -379,8 +379,10 @@ export default function QuizClient({ sessionId }: { sessionId: string }) {
   // Plano gratuito: 10 questões respondidas por dia
   const plano = usePlano();
   const questoesHoje = useQuestoesHoje();
+  const [limiteForcado, setLimiteForcado] = useState(false);
   const limiteDiarioAtingido =
-    plano.gratuito && questoesHoje != null && questoesHoje >= LIMITES_GRATIS.questoesPorDia;
+    limiteForcado ||
+    (plano.gratuito && questoesHoje != null && questoesHoje >= LIMITES_GRATIS.questoesPorDia);
 
   // Cronômetro — tempo total do simulado (persistido em timeSpentMs)
   const [clockMs, setClockMs] = useState(0);
@@ -649,9 +651,17 @@ export default function QuizClient({ sessionId }: { sessionId: string }) {
       const correct = safeStr(correctId);
 
       const sessionRef = doc(db, "users", u.uid, "sessions", sessionId);
+      const planUsoRef = doc(db, "users", u.uid, "meta", "planUso");
       const result = await runTransaction(db, async (tx) => {
         const snap = await tx.get(sessionRef);
         if (!snap.exists()) throw new Error("Sessão não encontrada.");
+
+        // Plano gratuito: o contador diário é lido/incrementado na MESMA
+        // transação — as firestore.rules recusam a resposta sem isso.
+        let usoSnap = null;
+        if (plano.gratuito) {
+          usoSnap = await tx.get(planUsoRef);
+        }
 
         const persisted = snap.data() as SessionDoc;
         const existingAnswer = persisted.answersMap?.[currentQuestion.id];
@@ -664,6 +674,16 @@ export default function QuizClient({ sessionId }: { sessionId: string }) {
             correctCount: Number(persisted.correctCount ?? 0),
             scorePercent: Number(persisted.scorePercent ?? 0),
           };
+        }
+
+        if (plano.gratuito && usoSnap) {
+          const hoje = brtDiaKey();
+          const uso = usoSnap.exists() ? (usoSnap.data() as { diaKey?: unknown; respostasDia?: unknown }) : null;
+          const jaHoje = uso && String(uso.diaKey ?? "") === hoje ? Number(uso.respostasDia ?? 0) || 0 : 0;
+          if (jaHoje >= LIMITES_GRATIS.questoesPorDia) {
+            return { limiteDiario: true as const };
+          }
+          tx.set(planUsoRef, { diaKey: hoje, respostasDia: jaHoje + 1 }, { merge: true });
         }
 
         const ok = !!(correct && chosen && correct === chosen);
@@ -696,6 +716,11 @@ export default function QuizClient({ sessionId }: { sessionId: string }) {
           scorePercent,
         };
       });
+
+      if ("limiteDiario" in result) {
+        setLimiteForcado(true);
+        return;
+      }
 
       // Acompanhamento de estudo (stats + caderno de erros) — só em resposta nova.
       if (!result.alreadyAnswered) {
@@ -733,7 +758,12 @@ export default function QuizClient({ sessionId }: { sessionId: string }) {
       flushClock();
     } catch (e) {
       console.error(e);
-      setErr("Não foi possível confirmar sua resposta.");
+      // Regras do servidor recusaram (limite do plano gratuito atingido)
+      if (plano.gratuito && (e as { code?: string })?.code === "permission-denied") {
+        setLimiteForcado(true);
+      } else {
+        setErr("Não foi possível confirmar sua resposta.");
+      }
     } finally {
       setIsSubmitting(false);
     }

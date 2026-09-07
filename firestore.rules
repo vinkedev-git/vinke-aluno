@@ -9,6 +9,115 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == uid;
     }
 
+    // ─── Plano gratuito: enforcement no servidor ─────────────────────────
+    // O aluno gratuito tem limites (10 respostas/dia no quiz, 1 simulado/mês)
+    // que o cliente aplica na interface, mas quem GARANTE é este arquivo:
+    // toda resposta/criação de simulado do gratuito precisa vir na mesma
+    // transação de um contador em users/{uid}/meta/planUso, cujas regras só
+    // aceitam incrementos válidos com a data calculada pelo servidor.
+
+    function entPath() {
+      return /databases/$(database)/documents/entitlements/$(request.auth.uid);
+    }
+
+    // Gratuito = entitlement existente com plan == "gratuito".
+    // Sem entitlement ou sem o campo plan => conta paga/legada (sem limites).
+    function ehGratuito() {
+      return exists(entPath())
+        && ('plan' in get(entPath()).data)
+        && get(entPath()).data.plan == 'gratuito';
+    }
+
+    // Datas no fuso de Brasília (UTC-3 fixo; o Brasil não tem horário de verão)
+    function pad2(n) {
+      return n < 10 ? '0' + string(n) : string(n);
+    }
+    function diaHoje() {
+      let t = request.time - duration.value(3, 'h');
+      return string(t.year()) + '-' + pad2(t.month()) + '-' + pad2(t.day());
+    }
+    function mesAtual() {
+      let t = request.time - duration.value(3, 'h');
+      return string(t.year()) + '-' + pad2(t.month());
+    }
+
+    function planUsoPath(uid) {
+      return /databases/$(database)/documents/users/$(uid)/meta/planUso;
+    }
+
+    // A criação de sessão do gratuito precisa "virar o mês" no contador
+    // DENTRO do mesmo batch: antes != mês atual, depois == mês atual.
+    // Como a virada só é possível uma vez por mês, sai 1 simulado/mês.
+    function flipMesNoBatch(uid) {
+      return getAfter(planUsoPath(uid)).data.get('simuladoMes', '') == mesAtual()
+        && !(exists(planUsoPath(uid))
+             && get(planUsoPath(uid)).data.get('simuladoMes', '') == mesAtual());
+    }
+
+    // Uma resposta nova do gratuito precisa incrementar o contador diário
+    // no mesmo batch: +1 sobre o valor de hoje (ou 1 se o dia virou), até 10.
+    function respostaContadaNoBatch(uid) {
+      let depois = getAfter(planUsoPath(uid)).data;
+      return depois.get('diaKey', '') == diaHoje()
+        && depois.get('respostasDia', 0) is int
+        && depois.get('respostasDia', 0) <= 10
+        && (
+          !exists(planUsoPath(uid))
+            ? depois.get('respostasDia', 0) == 1
+            : (
+              get(planUsoPath(uid)).data.get('diaKey', '') == diaHoje()
+                ? depois.get('respostasDia', 0) == get(planUsoPath(uid)).data.get('respostasDia', 0) + 1
+                : depois.get('respostasDia', 0) == 1
+            )
+        );
+    }
+
+    // Uma atualização de sessão conta como "resposta" quando mexe no
+    // answeredCount ou no answersMap (navegação/conclusão não contam).
+    function escritaDeResposta() {
+      return request.resource.data.get('answeredCount', 0) != resource.data.get('answeredCount', 0)
+        || request.resource.data.diff(resource.data).affectedKeys().hasAny(['answersMap']);
+    }
+
+    // O próprio contador só aceita escritas disciplinadas do dono:
+    // campos conhecidos; dia = incremento válido de hoje (ou inalterado);
+    // mês = mês atual (ou inalterado). Delete proibido (impediria reset).
+    function planUsoValido() {
+      let n = request.resource.data;
+      return n.keys().hasOnly(['diaKey', 'respostasDia', 'simuladoMes'])
+        && diaValido(n) && mesValido(n);
+    }
+    function diaValido(n) {
+      return !('diaKey' in n)
+        ? !('respostasDia' in n)
+        : (
+          // inalterado (ex.: batch que só vira o mês)
+          (resource != null
+            && n.get('diaKey', '') == resource.data.get('diaKey', '§')
+            && n.get('respostasDia', -1) == resource.data.get('respostasDia', -2))
+          // ou incremento válido de hoje
+          || (
+            n.diaKey == diaHoje()
+            && n.get('respostasDia', 0) is int
+            && n.get('respostasDia', 0) >= 1
+            && n.get('respostasDia', 0) <= 10
+            && (
+              (resource != null && resource.data.get('diaKey', '') == diaHoje())
+                ? n.respostasDia == resource.data.get('respostasDia', 0) + 1
+                : n.respostasDia == 1
+            )
+          )
+        );
+    }
+    function mesValido(n) {
+      return !('simuladoMes' in n)
+        ? true
+        : (
+          (resource != null && n.get('simuladoMes', '') == resource.data.get('simuladoMes', '§'))
+          || n.simuladoMes == mesAtual()
+        );
+    }
+
     // Perfil do usuario (usado na tela de perfil)
     match /users/{uid} {
       allow read, write: if isOwner(uid);
@@ -18,24 +127,37 @@ service cloud.firestore {
         allow read, write: if isOwner(uid);
       }
 
-      // Simulados do aluno
+      // Simulados do aluno. Gratuito: criação consome a virada mensal do
+      // contador; respostas consomem o incremento diário.
       match /sessions/{sessionId} {
-        allow read, create, update, delete: if isOwner(uid);
+        allow read, delete: if isOwner(uid);
+        allow create: if isOwner(uid) && (!ehGratuito() || flipMesNoBatch(uid));
+        allow update: if isOwner(uid)
+          && (!ehGratuito() || !escritaDeResposta() || respostaContadaNoBatch(uid));
       }
 
-      // Flashcards do aluno (revisao espacada)
+      // Flashcards do aluno (revisao espacada) — recurso de plano pago
       match /flashcards/{cardId} {
-        allow read, create, update, delete: if isOwner(uid);
+        allow read, create, update, delete: if isOwner(uid) && !ehGratuito();
       }
 
-      // Caderno de erros (questoes erradas para revisao)
+      // Caderno de erros (o registro do erro é automático e vale para todos;
+      // a REVISÃO pelo caderno cria sessões, já limitadas acima)
       match /errorNotebook/{questionId} {
         allow read, create, update, delete: if isOwner(uid);
       }
 
       // Metadados do aluno (stats agregadas, configuracoes, etc.)
+      // O contador planUso tem regras próprias abaixo.
       match /meta/{docId} {
-        allow read, create, update, delete: if isOwner(uid);
+        allow read: if isOwner(uid);
+        allow create, update, delete: if isOwner(uid) && docId != 'planUso';
+      }
+
+      match /meta/planUso {
+        allow read: if isOwner(uid);
+        allow create, update: if isOwner(uid) && planUsoValido();
+        allow delete: if false;
       }
 
       // Questao do dia
@@ -86,33 +208,28 @@ service cloud.firestore {
       allow read, update, delete: if false;
     }
 
-    // ─── Flashcards (novo modulo) ─────────────────────────────────────────
-    // Cards e decks: leitura para logados (o app filtra o que mostrar por
-    // status/isActive/plano). Escrita apenas via admin SDK.
+    // ─── Flashcards (conteúdo) — recurso de plano pago ────────────────────
     match /flashcards/{cardId} {
-      allow read: if isSignedIn();
+      allow read: if isSignedIn() && !ehGratuito();
       allow write: if false;
     }
 
     match /flashcardDecks/{deckId} {
-      allow read: if isSignedIn();
+      allow read: if isSignedIn() && !ehGratuito();
       allow write: if false;
     }
 
     // Progresso individual do aluno em cada card. ID = {uid}_{flashcardId}
-    // Aluno pode ler/escrever apenas os proprios documentos.
     match /userFlashcardProgress/{docId} {
-      allow get, write: if isSignedIn()
+      allow get, write: if isSignedIn() && !ehGratuito()
         && docId.matches(request.auth.uid + '_.+');
-      // Query da colecao: liberada apenas para os proprios documentos, o que
-      // permite montar o Deck do Dia com uma query em vez de um getDoc por card.
-      allow list: if isSignedIn()
+      allow list: if isSignedIn() && !ehGratuito()
         && resource.data.userId == request.auth.uid;
     }
 
     // Configuracoes/stats de flashcards do aluno. ID = uid.
     match /userFlashcardSettings/{uid} {
-      allow read, write: if isOwner(uid);
+      allow read, write: if isOwner(uid) && !ehGratuito();
     }
 
     // Fallback: nega tudo que nao foi explicitamente permitido
