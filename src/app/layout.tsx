@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Manrope, Space_Grotesk } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import StagingBanner from "@/components/StagingBanner";
 
@@ -70,6 +71,7 @@ export default function RootLayout({
       >
         <StagingBanner />
         {children}
+        <Analytics />
       </body>
     </html>
   );
