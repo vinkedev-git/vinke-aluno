@@ -8,8 +8,8 @@
  * - userFlashcardSettings (colecao raiz, id = uid)
  */
 
-export type Module = "me" | "tea" | "tsa";
-export type ExamType = "ME" | "TEA" | "TSA";
+export type Module = "me" | "tea" | "tsa" | "enem";
+export type ExamType = "ME" | "TEA" | "TSA" | "ENEM";
 export type Difficulty = "easy" | "medium" | "hard";
 export type FlashcardStatus = "pending_review" | "published" | "draft" | "archived";
 export type SourceType = "question" | "manual" | "ai_generated";

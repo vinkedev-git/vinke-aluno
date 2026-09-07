@@ -28,8 +28,11 @@
 const isTrue = (v: string | undefined) => v === "true" || v === "1";
 
 export const featureFlags = {
-  /** Sistema de flashcards (em desenvolvimento) */
-  flashcards: isTrue(process.env.NEXT_PUBLIC_FF_FLASHCARDS),
+  /** Sistema de flashcards — ligado por padrão no Vinke; defina
+   *  NEXT_PUBLIC_FF_FLASHCARDS=false para desligar em emergência. */
+  flashcards: process.env.NEXT_PUBLIC_FF_FLASHCARDS === undefined
+    ? true
+    : isTrue(process.env.NEXT_PUBLIC_FF_FLASHCARDS),
 
   /** Indica que estamos em ambiente de homologação (mostra banner amarelo) */
   staging: isTrue(process.env.NEXT_PUBLIC_FF_STAGING),

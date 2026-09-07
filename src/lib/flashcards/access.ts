@@ -43,12 +43,13 @@ export function useHasFlashcardsAccess() {
           setState({ loading: false, hasAccess: false, reason: "no_entitlement" });
           return;
         }
-        const isTsa = planHasFlashcardsAccess({
-          code: typeof data.planId === "string" ? data.planId : null,
+        const temAcesso = planHasFlashcardsAccess({
+          // `plan` é o código do plano no Vinke ("gratuito" = sem acesso)
+          code: typeof data.plan === "string" ? data.plan : null,
           title: typeof data.productTitle === "string" ? data.productTitle : null,
           productId: typeof data.productId === "string" ? data.productId : null,
         });
-        if (!isTsa) {
+        if (!temAcesso) {
           setState({ loading: false, hasAccess: false, reason: "wrong_plan" });
           return;
         }

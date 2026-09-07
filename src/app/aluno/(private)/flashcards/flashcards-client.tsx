@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { fetchOrCreateSettings, fetchPublishedDecks, type DeckListItem } from "@/lib/flashcards/queries";
 import { useHasFlashcardsAccess } from "@/lib/flashcards/access";
+import { UpsellPlano } from "@/components/aluno/UpsellPlano";
 import { SESSION_SIZES } from "@/lib/flashcards/session";
 import { MODULE_LABEL } from "@/lib/flashcards/constants";
 import type { UserFlashcardSettingsDoc, Module } from "@/lib/flashcards/types";
@@ -460,24 +461,11 @@ function StatCard({
 
 function UpgradePlanScreen() {
   return (
-    <div className="mx-auto max-w-2xl rounded-3xl border border-vinke-ring bg-gradient-to-br from-blue-50 to-indigo-100 p-10 text-center dark:border-blue-900 dark:from-blue-950/40 dark:to-indigo-950/40">
-      <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-md">
-        <Lock size={32} className="text-vinke" />
-      </div>
-      <h2 className="text-2xl font-black text-vinke-ink dark:text-white">
-        Recurso exclusivo do plano TSA
-      </h2>
-      <p className="mx-auto mt-3 max-w-md text-sm text-vinke-ink2 dark:text-slate-300">
-        Os flashcards com repetição espaçada estão disponíveis apenas para
-        alunos do plano <strong>Cobertura Completa (TSA)</strong>. Faça upgrade
-        para desbloquear mais de <strong>2.000 cards</strong> de revisão rápida.
-      </p>
-      <Link
-        href="/aluno/assinatura"
-        className="mt-6 inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-blue-700 to-blue-500 px-5 py-2.5 text-sm font-bold text-white shadow-md hover:from-blue-600 hover:to-blue-400"
-      >
-        Ver planos disponíveis
-      </Link>
+    <div className="py-10">
+      <UpsellPlano
+        titulo="Os flashcards são do plano pago"
+        descricao="Revisão rápida com repetição espaçada: os conceitos que o ENEM mais cobra viram cards que voltam na hora certa para você não esquecer. Assine para desbloquear todos os decks."
+      />
     </div>
   );
 }

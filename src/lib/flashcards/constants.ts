@@ -1,7 +1,7 @@
 import type { Module, ExamType, Difficulty, FlashcardStatus } from "./types";
 
-export const MODULES: Module[] = ["me", "tea", "tsa"];
-export const EXAM_TYPES: ExamType[] = ["ME", "TEA", "TSA"];
+export const MODULES: Module[] = ["me", "tea", "tsa", "enem"];
+export const EXAM_TYPES: ExamType[] = ["ME", "TEA", "TSA", "ENEM"];
 export const DIFFICULTIES: Difficulty[] = ["easy", "medium", "hard"];
 export const STATUSES: FlashcardStatus[] = ["pending_review", "published", "draft", "archived"];
 
@@ -9,6 +9,7 @@ export const MODULE_LABEL: Record<Module, string> = {
   me: "ME",
   tea: "TEA",
   tsa: "TSA",
+  enem: "ENEM",
 };
 
 export const DIFFICULTY_LABEL: Record<Difficulty, string> = {
@@ -45,8 +46,10 @@ export const SM2 = {
 } as const;
 
 /**
- * Detecta se o titulo/codigo do plano corresponde ao plano com acesso a flashcards.
- * Flashcards sao exclusivos do plano TSA (Cobertura Completa).
+ * Regra do Vinke: flashcards fazem parte de qualquer plano PAGO.
+ * O campo `plan` do entitlement é o código do plano ("gratuito", "mensal",
+ * "anual", "reta-final-2026"); entitlement ativo sem `plan` é conta
+ * paga/legada criada pelo admin — tem acesso.
  */
 export function planHasFlashcardsAccess(plan: {
   code?: string | null;
@@ -54,9 +57,5 @@ export function planHasFlashcardsAccess(plan: {
   productId?: string | null;
 } | null | undefined): boolean {
   if (!plan) return false;
-  const haystack = [plan.code, plan.title]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase();
-  return haystack.includes("tsa") || haystack.includes("cobertura completa");
+  return String(plan.code ?? "") !== "gratuito";
 }
