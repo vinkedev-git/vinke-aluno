@@ -24,6 +24,7 @@ import {
   Clock,
   BookOpen,
   Target,
+  Settings2,
 } from "lucide-react";
 import { getDailyStatus } from "@/lib/daily";
 import { getFlashcardOverview } from "@/lib/flashcards/stats";
@@ -471,6 +472,18 @@ export default function EstudoDeHojeClient() {
             </div>
           );
         })}
+      </div>
+
+      {/* Ajuste das metas diárias (questões/flashcards) nas configurações */}
+      <div className="mt-5 flex justify-center">
+        <button
+          type="button"
+          onClick={() => router.push("/aluno/configuracoes")}
+          className="flex items-center gap-2 rounded-[10px] border-[1.5px] border-vinke-line px-5 py-2.5 text-[13px] font-bold text-vinke-ink2 transition hover:border-vinke hover:text-vinke dark:border-vinke-navy-line dark:text-slate-300 dark:hover:border-vinke-lav dark:hover:text-vinke-lav"
+        >
+          <Settings2 size={15} />
+          Ajustar metas diárias
+        </button>
       </div>
     </div>
   );
