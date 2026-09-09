@@ -130,9 +130,13 @@ export default function EstudoDeHojeClient() {
         weakTheme = worst?.theme ?? null;
       }
 
-      // Flashcards disponiveis hoje (SM-2). O helper ja aplica o teto diario —
-      // nao envolver em Math.min de novo aqui.
-      const flashcardsDue = fcOverview.due;
+      // Flashcards disponiveis hoje (SM-2). O helper limita ao teto global do
+      // modulo (20); aqui respeitamos tambem a META DIARIA que o aluno definiu
+      // nas configuracoes, descontando o que ja revisou hoje.
+      const flashcardsDue = Math.min(
+        fcOverview.due,
+        Math.max(0, dailyFlashcardsGoal - todayFlashcards)
+      );
 
       // Erros pendentes
       const errorsPending = Math.min(
