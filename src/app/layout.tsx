@@ -3,6 +3,7 @@ import { Manrope, Space_Grotesk } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import StagingBanner from "@/components/StagingBanner";
+import MetaPixel from "@/components/MetaPixel";
 
 const manrope = Manrope({
   variable: "--font-manrope",
@@ -72,6 +73,7 @@ export default function RootLayout({
         <StagingBanner />
         {children}
         <Analytics />
+        <MetaPixel />
       </body>
     </html>
   );

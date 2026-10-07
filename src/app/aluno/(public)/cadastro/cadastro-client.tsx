@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { VinkeSymbol } from "@/components/VinkeLogo";
+import { track } from "@/components/MetaPixel";
 
 const inputClass =
   "h-12 w-full rounded-[9px] border-[1.5px] border-vinke-line bg-white px-4 text-sm font-medium text-vinke-ink outline-none transition placeholder:text-vinke-ink3 focus:border-vinke focus:ring-[3px] focus:ring-vinke-ring dark:border-vinke-navy-line dark:bg-vinke-navy dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-vinke-lav dark:focus:ring-vinke/30";
@@ -52,6 +53,7 @@ export default function CadastroClient() {
       }
 
       // Conta criada — entra direto.
+      track("CompleteRegistration", { content_name: "Plano gratuito" });
       await signInWithEmailAndPassword(auth, eMail, senha);
       router.replace("/aluno");
     } catch {
