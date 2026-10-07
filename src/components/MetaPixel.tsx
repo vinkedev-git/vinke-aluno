@@ -16,9 +16,9 @@ const PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID;
 
 // Códigos de checkout da Eduzz → nome legível do plano (para o evento).
 const PLANOS: Record<string, { name: string; value: number }> = {
-  R9JXJO5E0X: { name: "Mensal", value: 34.9 },
-  KW8ZK4BO01: { name: "Anual", value: 238.8 },
-  "797Z7QJV0E": { name: "Passe Reta Final", value: 49.9 },
+  "1W322JN592": { name: "Mensal", value: 34.9 },
+  "40QRRBZ19B": { name: "Anual", value: 238.8 },
+  G96RR56EW1: { name: "Passe Reta Final", value: 49.9 },
 };
 
 type Fbq = (...args: unknown[]) => void;
