@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { doc, getDoc, Timestamp } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
@@ -103,8 +103,6 @@ function reasonBannerText(reason: string | null) {
 
 export default function AssinaturaClient() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const reason = searchParams.get("reason");
 
   const user = auth.currentUser;
 
@@ -169,7 +167,21 @@ export default function AssinaturaClient() {
     return null;
   }, [validUntilDate, remainingDays]);
 
-  const topReasonBanner = reasonBannerText(reason);
+  // O motivo vem da URL (o guard redireciona com ?reason=...). Se a assinatura
+  // já foi regularizada desde aquele redirect, o aviso não pode continuar
+  // aparecendo — quem manda é o estado ATUAL do entitlement.
+  const topReasonBanner = useMemo(() => {
+    if (loading) return "";
+    const problemaAtual = !ent
+      ? "no_entitlement"
+      : expired
+        ? "expired"
+        : !ent.active
+          ? "inactive"
+          : null;
+    if (!problemaAtual) return "";
+    return reasonBannerText(problemaAtual);
+  }, [loading, ent, expired]);
 
   const paidText = useMemo(() => {
     const value = ent?.amountPaid;
@@ -201,7 +213,7 @@ export default function AssinaturaClient() {
         </div>
       </div>
 
-      {/* Banner por reason (quando o Guard redirecionar) */}
+      {/* Aviso de acesso — baseado no estado atual da assinatura */}
       {topReasonBanner ? (
         <div className="rounded-3xl border border-transparent bg-vinke-amber-soft shadow-sm p-6 dark:border-amber-900/40 dark:bg-amber-950/30">
           <div className="text-lg font-black text-vinke-ink dark:text-slate-100">Atenção</div>
