@@ -10,13 +10,24 @@ const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://aluno.vinke.app.br";
 const LOGO_URL = `${APP_URL}/logo-icon.png`;
 
 // Identidade Vinke: navy #0B0A21, roxo #6236F0, lavanda #8B6DFF, offwhite #F7F6F2
-function buildEmailHtml(resetLink: string): string {
+// `primeiroAcesso` troca os textos para quem acabou de comprar e ainda não
+// tem senha — nesse caso falar em "redefinir" confunde.
+function buildEmailHtml(resetLink: string, primeiroAcesso = false): string {
+  const tituloH1 = primeiroAcesso ? "Crie sua senha de acesso" : "Redefinição de senha";
+  const intro = primeiroAcesso
+    ? "Seu acesso ao Vinke está liberado. Para entrar na plataforma, defina sua senha no botão abaixo:"
+    : "Recebemos uma solicitação para redefinir a senha da sua conta. Clique no botão abaixo para criar uma nova senha:";
+  const rotuloBotao = primeiroAcesso ? "Criar minha senha" : "Redefinir minha senha";
+  const avisoFinal = primeiroAcesso
+    ? "<strong>Este link expira em 1 hora.</strong> Se ele vencer, peça outro na tela de acesso."
+    : "<strong>Este link expira em 1 hora.</strong> Se você não solicitou a redefinição de senha, ignore este e-mail — sua conta permanece segura.";
+
   return `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Redefinição de senha</title>
+  <title>${tituloH1}</title>
 </head>
 <body style="margin:0;padding:0;background-color:#F7F6F2;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#F7F6F2;padding:40px 16px;">
@@ -39,11 +50,10 @@ function buildEmailHtml(resetLink: string): string {
           <tr>
             <td style="background:#ffffff;padding:40px 40px 32px;border-left:1px solid #E9E7F4;border-right:1px solid #E9E7F4;">
               <h1 style="margin:0 0 12px;font-size:24px;font-weight:700;color:#0B0A21;line-height:1.3;">
-                Redefinição de senha
+                ${tituloH1}
               </h1>
               <p style="margin:0 0 24px;font-size:15px;color:#5D5A72;line-height:1.6;">
-                Recebemos uma solicitação para redefinir a senha da sua conta.
-                Clique no botão abaixo para criar uma nova senha:
+                ${intro}
               </p>
 
               <!-- CTA Button -->
@@ -52,7 +62,7 @@ function buildEmailHtml(resetLink: string): string {
                   <td align="center" style="border-radius:12px;background-color:#6236F0;">
                     <a href="${resetLink}"
                       style="display:inline-block;padding:14px 32px;font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:12px;letter-spacing:0.01em;">
-                      Redefinir minha senha
+                      ${rotuloBotao}
                     </a>
                   </td>
                 </tr>
@@ -70,7 +80,7 @@ function buildEmailHtml(resetLink: string): string {
                 <tr>
                   <td style="background:#FDF6EC;border:1px solid #F0DBB8;border-radius:10px;padding:14px 16px;">
                     <p style="margin:0;font-size:13px;color:#B4650A;line-height:1.5;">
-                      <strong>Este link expira em 1 hora.</strong> Se você não solicitou a redefinição de senha, ignore este e-mail — sua conta permanece segura.
+                      ${avisoFinal}
                     </p>
                   </td>
                 </tr>
@@ -114,7 +124,8 @@ function isRateLimited(email: string): boolean {
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json() as { email?: unknown };
+    const body = await req.json() as { email?: unknown; primeiroAcesso?: unknown };
+    const primeiroAcesso = body.primeiroAcesso === true;
     const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
 
     if (!email || !email.includes("@")) {
@@ -144,8 +155,8 @@ export async function POST(req: NextRequest) {
     await getResend().emails.send({
       from: "Vinke <noreply@vinke.app.br>",
       to: email,
-      subject: "Redefinição de senha — Vinke",
-      html: buildEmailHtml(resetLink),
+      subject: primeiroAcesso ? "Crie sua senha — Vinke" : "Redefinição de senha — Vinke",
+      html: buildEmailHtml(resetLink, primeiroAcesso),
     });
 
     return NextResponse.json({ ok: true });
