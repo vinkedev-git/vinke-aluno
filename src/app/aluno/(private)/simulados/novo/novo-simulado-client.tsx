@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { collection, doc, getDocs, serverTimestamp, writeBatch } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
-import { usePlano, simuladoDoMesJaUsado, brtMesKey } from "@/lib/plano";
+import { usePlano, simuladoDoMesJaUsado, brtMesKey, useQuestoesHoje, LIMITES_GRATIS } from "@/lib/plano";
 import { AvisoLimitePlano } from "@/components/aluno/UpsellPlano";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp, X, Zap, Filter } from "lucide-react";
@@ -124,8 +124,13 @@ export default function NovoSimuladoClient() {
   const [themePickerOpen, setThemePickerOpen] = useState(false);
   const [themeQuery, setThemeQuery] = useState("");
 
-  // Plano gratuito: 1 simulado por mês
+  // Plano gratuito: 1 simulado por mês e 10 questões por dia
   const plano = usePlano();
+  const questoesHoje = useQuestoesHoje();
+  const restantesHoje =
+    plano.gratuito && questoesHoje != null
+      ? Math.max(0, LIMITES_GRATIS.questoesPorDia - questoesHoje)
+      : null;
   const [limiteMensalAtingido, setLimiteMensalAtingido] = useState(false);
   useEffect(() => {
     if (!plano.gratuito || !user) return;
@@ -406,6 +411,23 @@ export default function NovoSimuladoClient() {
               </button>
             ))}
           </div>
+          {restantesHoje != null && qtd > restantesHoje && (
+            <div className="mt-3 rounded-[12px] bg-vinke-amber-soft px-3.5 py-3 text-xs leading-5 text-vinke-amber dark:bg-amber-950/30 dark:text-amber-300">
+              {restantesHoje === 0 ? (
+                <>
+                  Você já respondeu suas <strong>{LIMITES_GRATIS.questoesPorDia} questões de hoje</strong>.
+                  Pode montar o simulado agora e continuar amanhã — ou assinar para responder sem limite.
+                </>
+              ) : (
+                <>
+                  No plano gratuito você responde <strong>{LIMITES_GRATIS.questoesPorDia} questões por dia</strong>
+                  {" "}(hoje restam {restantesHoje}). Um simulado de {qtd} levaria{" "}
+                  {Math.ceil(qtd / LIMITES_GRATIS.questoesPorDia)} dias — o progresso fica salvo e você continua
+                  depois. Para fazer de uma vez, assine um plano.
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
