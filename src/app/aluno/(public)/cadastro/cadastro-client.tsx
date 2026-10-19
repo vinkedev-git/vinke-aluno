@@ -17,8 +17,19 @@ export default function CadastroClient() {
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
+  const [celular, setCelular] = useState("");
+  const [aceitaContato, setAceitaContato] = useState(false);
   const [loading, setLoading] = useState(false);
   const [uiError, setUiError] = useState("");
+
+  // Máscara leve: o aluno digita só números e vê (11) 99999-9999
+  const formatarCelular = (valor: string) => {
+    const d = valor.replace(/\D/g, "").slice(0, 11);
+    if (d.length <= 2) return d;
+    if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
+    if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+    return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+  };
 
   const onCadastro = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,7 +55,13 @@ export default function CadastroClient() {
       const res = await fetch("/api/auth/cadastro", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ nome: nomeOk, email: eMail, senha }),
+        body: JSON.stringify({
+          nome: nomeOk,
+          email: eMail,
+          senha,
+          celular: celular.replace(/\D/g, ""),
+          aceitaContato,
+        }),
       });
       const data = (await res.json()) as { ok?: boolean; error?: string };
       if (!res.ok || !data.ok) {
@@ -173,6 +190,34 @@ export default function CadastroClient() {
                   placeholder="Mínimo de 6 caracteres"
                   className={inputClass}
                 />
+              </div>
+
+              <div>
+                <div className="mb-1 flex items-baseline gap-2">
+                  <span className="text-xs font-bold text-vinke-ink dark:text-slate-200">Celular</span>
+                  <span className="text-[11px] font-medium text-vinke-ink3">opcional</span>
+                </div>
+                <input
+                  value={celular}
+                  onChange={(e) => setCelular(formatarCelular(e.target.value))}
+                  type="tel"
+                  inputMode="numeric"
+                  autoComplete="tel"
+                  placeholder="(11) 99999-9999"
+                  className={inputClass}
+                />
+                <label className="mt-2 flex cursor-pointer items-start gap-2 text-[11px] leading-4 text-vinke-ink3">
+                  <input
+                    type="checkbox"
+                    checked={aceitaContato}
+                    onChange={(e) => setAceitaContato(e.target.checked)}
+                    className="mt-0.5 h-3.5 w-3.5 shrink-0 accent-[#6236F0]"
+                  />
+                  <span>
+                    Quero receber dicas de estudo e ofertas pelo WhatsApp. Você pode pedir para
+                    parar quando quiser.
+                  </span>
+                </label>
               </div>
 
               <button

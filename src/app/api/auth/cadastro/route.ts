@@ -25,10 +25,19 @@ function isRateLimited(key: string): boolean {
 
 export async function POST(req: NextRequest) {
   try {
-    const body = (await req.json()) as { nome?: unknown; email?: unknown; senha?: unknown };
+    const body = (await req.json()) as {
+      nome?: unknown; email?: unknown; senha?: unknown;
+      celular?: unknown; aceitaContato?: unknown;
+    };
     const nome = typeof body.nome === "string" ? body.nome.trim() : "";
     const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
     const senha = typeof body.senha === "string" ? body.senha : "";
+    // Celular é opcional: só guardamos dígitos e ignoramos valores incompletos.
+    const celularDigitos = String(body.celular ?? "").replace(/\D/g, "");
+    const celular = celularDigitos.length >= 10 && celularDigitos.length <= 11 ? celularDigitos : "";
+    // Consentimento para contato comercial (WhatsApp) — precisa ser um ato
+    // afirmativo do aluno; sem ele o telefone serve só para conta/suporte.
+    const aceitaContato = body.aceitaContato === true && celular !== "";
 
     if (nome.length < 2) {
       return NextResponse.json({ ok: false, error: "Digite seu nome." }, { status: 400 });
@@ -69,12 +78,28 @@ export async function POST(req: NextRequest) {
         // O admin filtra alunos por role == "student"; sem isso a conta
         // criada aqui some das telas de alunos, simulados e do dashboard.
         role: "student",
+        ...(celular ? { phone: celular, cellphone: celular } : {}),
+        aceitaContatoWhatsapp: aceitaContato,
+        ...(aceitaContato ? { aceitaContatoEm: FieldValue.serverTimestamp() } : {}),
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
         origem: "cadastro-self-service",
       },
       { merge: true }
     );
+    if (celular) {
+      batch.set(
+        db.collection("users").doc(user.uid).collection("profile").doc("main"),
+        {
+          name: nome,
+          phone: celular,
+          cellphone: celular,
+          source: "cadastro-self-service",
+          updatedAt: FieldValue.serverTimestamp(),
+        },
+        { merge: true }
+      );
+    }
     batch.set(
       db.collection("entitlements").doc(user.uid),
       {
