@@ -127,11 +127,22 @@ export default function NovoSimuladoClient() {
   // Plano gratuito: 1 simulado por semana e 10 questões por dia
   const plano = usePlano();
   const questoesHoje = useQuestoesHoje();
+  // Simulados de 45/90 são o formato real da prova — mas quem responde 10 por
+  // dia nunca termina (dos criados com 90, nenhum foi concluído). No gratuito
+  // oferecemos só tamanhos concluíveis; o formato completo fica no plano pago.
+  const opcoesQtd = plano.gratuito ? [5, 10, 20] : [10, 20, 45, 90];
   const restantesHoje =
     plano.gratuito && questoesHoje != null
       ? Math.max(0, LIMITES_GRATIS.questoesPorDia - questoesHoje)
       : null;
   const [limiteSemanalAtingido, setLimiteSemanalAtingido] = useState(false);
+  // Mantém a seleção dentro das opções do plano (ex.: 90 vindo da URL)
+  useEffect(() => {
+    if (plano.carregando) return;
+    if (!opcoesQtd.includes(qtd)) setQtd(opcoesQtd[opcoesQtd.length - 1]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [plano.carregando, plano.gratuito, qtd]);
+
   useEffect(() => {
     if (!plano.gratuito || !user) return;
     void simuladoDaSemanaJaUsado(user.uid).then(setLimiteSemanalAtingido).catch(() => {});
@@ -397,9 +408,13 @@ export default function NovoSimuladoClient() {
         <div className="rounded-2xl border border-vinke-line/80 bg-white p-5 dark:border-vinke-navy-line dark:bg-vinke-navy-card">
           <div className="text-[11px] font-bold uppercase tracking-widest text-vinke-ink3">Qtd</div>
           <div className="mt-0.5 font-display font-bold text-vinke-ink dark:text-slate-100">Questões</div>
-          <div className="mt-1 text-xs text-vinke-ink4">45 = uma área completa · 90 = um dia de prova</div>
+          <div className="mt-1 text-xs text-vinke-ink4">
+            {plano.gratuito
+              ? "Tamanhos que dá para concluir no ritmo do plano gratuito"
+              : "45 = uma área completa · 90 = um dia de prova"}
+          </div>
           <div className="mt-4 grid grid-cols-2 gap-2">
-            {[10, 20, 45, 90].map((n) => (
+            {opcoesQtd.map((n) => (
               <button key={n} type="button" onClick={() => setQtd(n)}
                 className={cn(
                   "rounded-2xl border px-4 py-3 text-sm font-semibold transition",
