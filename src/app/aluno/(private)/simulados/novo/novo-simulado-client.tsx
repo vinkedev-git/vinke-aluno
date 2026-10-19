@@ -131,6 +131,11 @@ export default function NovoSimuladoClient() {
   // dia nunca termina (dos criados com 90, nenhum foi concluído). No gratuito
   // oferecemos só tamanhos concluíveis; o formato completo fica no plano pago.
   const opcoesQtd = plano.gratuito ? [5, 10, 20] : [10, 20, 45, 90];
+  // Filtrar um assunto específico pode render pouquíssimas questões — e no
+  // gratuito um simulado de 2 questões consome o simulado da semana inteiro.
+  // Por isso completamos com questões próximas (mesma área, depois qualquer
+  // uma), sempre avisando e deixando o aluno desligar.
+  const [completarFaltantes, setCompletarFaltantes] = useState(true);
   const restantesHoje =
     plano.gratuito && questoesHoje != null
       ? Math.max(0, LIMITES_GRATIS.questoesPorDia - questoesHoje)
@@ -265,7 +270,13 @@ export default function NovoSimuladoClient() {
     [activeQuestions, selectedAnos, selectedAreas, selectedAssuntos]
   );
   const availableCount = availableQuestions.length;
-  const effectiveQuestionCount = Math.min(qtd, availableCount);
+  const hasFiltrosAplicados = () =>
+    selectedAnos.length > 0 || selectedAreas.length > 0 || selectedAssuntos.length > 0;
+  const faltam = Math.max(0, qtd - availableCount);
+  const vaiCompletar = faltam > 0 && completarFaltantes && hasFiltrosAplicados();
+  // Com complemento ligado o simulado sai no tamanho pedido; sem ele, fica
+  // limitado ao que os filtros oferecem.
+  const effectiveQuestionCount = vaiCompletar ? qtd : Math.min(qtd, availableCount);
 
   const anoCounts = useMemo(() => Object.fromEntries(anosDisponiveis.map((ano) => [
     ano, activeQuestions.filter((q) => matchesFilters(q, { anos: [ano], areaIds: selectedAreas, assuntosSelecionados: selectedAssuntos })).length
@@ -282,11 +293,42 @@ export default function NovoSimuladoClient() {
   async function pickQuestions(): Promise<QuestionBankDoc[]> {
     const source = questionsPool.length > 0 ? questionsPool
       : (await getDocs(collection(db, "questionsBank"))).docs.map((d) => ({ id: d.id, ...(d.data() as Omit<QuestionBankDoc, "id">) }));
-    return shuffle(
-      source
-        .filter((q) => q.isActive !== false)
-        .filter((q) => matchesFilters(q, { anos: selectedAnos, areaIds: selectedAreas, assuntosSelecionados: selectedAssuntos }))
+    const ativas = source.filter((q) => q.isActive !== false);
+    const exatas = shuffle(
+      ativas.filter((q) =>
+        matchesFilters(q, { anos: selectedAnos, areaIds: selectedAreas, assuntosSelecionados: selectedAssuntos })
+      )
     ).slice(0, qtd);
+
+    if (exatas.length >= qtd || !completarFaltantes) return exatas;
+
+    // Completa em camadas, da mais parecida para a mais ampla.
+    const jaEscolhidas = new Set(exatas.map((q) => q.id));
+    const areasRef = new Set(
+      selectedAreas.length > 0 ? selectedAreas : exatas.map((q) => extractAreaId(q))
+    );
+    const camadas = [
+      // mesma área e mesmos anos
+      (q: QuestionBankDoc) =>
+        areasRef.has(extractAreaId(q)) &&
+        (selectedAnos.length === 0 || selectedAnos.includes(extractYear(q))),
+      // mesma área, qualquer ano
+      (q: QuestionBankDoc) => areasRef.has(extractAreaId(q)),
+      // qualquer questão
+      () => true,
+    ];
+
+    const resultado = [...exatas];
+    for (const camada of camadas) {
+      if (resultado.length >= qtd) break;
+      const extras = shuffle(ativas.filter((q) => !jaEscolhidas.has(q.id) && camada(q)));
+      for (const q of extras) {
+        if (resultado.length >= qtd) break;
+        resultado.push(q);
+        jaEscolhidas.add(q.id);
+      }
+    }
+    return resultado;
   }
 
   const createSimulado = async () => {
@@ -426,6 +468,31 @@ export default function NovoSimuladoClient() {
               </button>
             ))}
           </div>
+          {faltam > 0 && hasFiltrosAplicados() && (
+            <div className="mt-3 rounded-[12px] border border-vinke-line bg-vinke-offwhite px-3.5 py-3 dark:border-vinke-navy-line dark:bg-vinke-navy">
+              <div className="text-xs leading-5 text-vinke-ink2 dark:text-slate-300">
+                Seus filtros têm <strong>{availableCount}</strong>{" "}
+                {availableCount === 1 ? "questão disponível" : "questões disponíveis"}.
+              </div>
+              <label className="mt-2 flex cursor-pointer items-start gap-2 text-xs leading-5 text-vinke-ink2 dark:text-slate-300">
+                <input
+                  type="checkbox"
+                  checked={completarFaltantes}
+                  onChange={(e) => setCompletarFaltantes(e.target.checked)}
+                  className="mt-0.5 h-4 w-4 shrink-0 accent-[#6236F0]"
+                />
+                <span>
+                  Completar com {faltam} {faltam === 1 ? "questão parecida" : "questões parecidas"} (mesma
+                  área) para fechar {qtd}.{" "}
+                  {!completarFaltantes && (
+                    <strong className="text-vinke-amber dark:text-amber-300">
+                      Sem isso, o simulado terá só {availableCount}.
+                    </strong>
+                  )}
+                </span>
+              </label>
+            </div>
+          )}
           {restantesHoje != null && qtd > restantesHoje && (
             <div className="mt-3 rounded-[12px] bg-vinke-amber-soft px-3.5 py-3 text-xs leading-5 text-vinke-amber dark:bg-amber-950/30 dark:text-amber-300">
               {restantesHoje === 0 ? (
