@@ -25,7 +25,7 @@ import { auth, db } from "@/lib/firebase";
 
 export const LIMITES_GRATIS = {
   questoesPorDia: 10,
-  simuladosPorMes: 1,
+  simuladosPorSemana: 1,
 } as const;
 
 export type PlanoInfo = {
@@ -56,11 +56,20 @@ export function brtDiaKey(): string {
   return `${d.getUTCFullYear()}-${mm}-${dd}`;
 }
 
-/** YYYY-MM em Brasília — precisa bater com mesAtual() das firestore.rules */
-export function brtMesKey(): string {
+/**
+ * Chave da semana em Brasília — precisa bater EXATAMENTE com semanaAtual()
+ * das firestore.rules. Usamos blocos de 7 dias contados a partir de 1º de
+ * janeiro porque é o cálculo que as regras conseguem reproduzir (elas têm
+ * dayOfYear, mas não semana ISO).
+ */
+export function brtSemanaKey(): string {
   const d = brtDate();
-  const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
-  return `${d.getUTCFullYear()}-${mm}`;
+  const ano = d.getUTCFullYear();
+  const diaDoAno =
+    Math.floor(
+      (Date.UTC(ano, d.getUTCMonth(), d.getUTCDate()) - Date.UTC(ano, 0, 1)) / 86_400_000
+    ) + 1;
+  return `${ano}-W${Math.floor((diaDoAno - 1) / 7)}`;
 }
 
 // Mesmo formato do dayKey() de study-tracking.ts (data local YYYY-MM-DD)
@@ -110,18 +119,24 @@ export function useQuestoesHoje(): number | null {
 }
 
 /**
- * Plano gratuito: 1 simulado por mês. Conta as sessões criadas no mês
- * corrente, ignorando as de revisão de erros (kind "error_review", que só
- * existem em recursos pagos).
+ * Plano gratuito: 1 simulado por semana. Conta as sessões criadas na semana
+ * corrente (mesmo bloco de 7 dias usado por brtSemanaKey), ignorando as de
+ * revisão de erros (kind "error_review", que só existem em recursos pagos).
  */
-export async function simuladoDoMesJaUsado(uid: string): Promise<boolean> {
-  const inicioDoMes = new Date();
-  inicioDoMes.setDate(1);
-  inicioDoMes.setHours(0, 0, 0, 0);
+export async function simuladoDaSemanaJaUsado(uid: string): Promise<boolean> {
+  const agora = brtDate();
+  const ano = agora.getUTCFullYear();
+  const diaDoAno =
+    Math.floor(
+      (Date.UTC(ano, agora.getUTCMonth(), agora.getUTCDate()) - Date.UTC(ano, 0, 1)) / 86_400_000
+    ) + 1;
+  const diasNaSemana = (diaDoAno - 1) % 7;
+  // volta ao 1º dia do bloco e ao começo do dia no fuso de Brasília
+  const inicio = new Date(Date.UTC(ano, agora.getUTCMonth(), agora.getUTCDate() - diasNaSemana, 3, 0, 0));
   const snap = await getDocs(
     query(
       collection(db, "users", uid, "sessions"),
-      where("createdAt", ">=", Timestamp.fromDate(inicioDoMes))
+      where("createdAt", ">=", Timestamp.fromDate(inicio))
     )
   );
   return snap.docs.some((d) => (d.data() as { kind?: unknown }).kind !== "error_review");

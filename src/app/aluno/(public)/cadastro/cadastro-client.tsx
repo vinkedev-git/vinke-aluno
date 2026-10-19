@@ -98,7 +98,7 @@ export default function CadastroClient() {
             <div className="relative z-10 space-y-2">
               {[
                 { icon: "✓", text: "10 questões oficiais comentadas por dia" },
-                { icon: "🗓️", text: "1 simulado completo por mês" },
+                { icon: "🗓️", text: "1 simulado completo por semana" },
                 { icon: "🔥", text: "Questão do dia e sequência de treino" },
               ].map((f) => (
                 <div

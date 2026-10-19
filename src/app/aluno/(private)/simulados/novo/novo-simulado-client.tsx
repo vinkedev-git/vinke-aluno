@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { collection, doc, getDocs, serverTimestamp, writeBatch } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
-import { usePlano, simuladoDoMesJaUsado, brtMesKey, useQuestoesHoje, LIMITES_GRATIS } from "@/lib/plano";
+import { usePlano, simuladoDaSemanaJaUsado, brtSemanaKey, useQuestoesHoje, LIMITES_GRATIS } from "@/lib/plano";
 import { AvisoLimitePlano } from "@/components/aluno/UpsellPlano";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronUp, X, Zap, Filter } from "lucide-react";
@@ -124,17 +124,17 @@ export default function NovoSimuladoClient() {
   const [themePickerOpen, setThemePickerOpen] = useState(false);
   const [themeQuery, setThemeQuery] = useState("");
 
-  // Plano gratuito: 1 simulado por mês e 10 questões por dia
+  // Plano gratuito: 1 simulado por semana e 10 questões por dia
   const plano = usePlano();
   const questoesHoje = useQuestoesHoje();
   const restantesHoje =
     plano.gratuito && questoesHoje != null
       ? Math.max(0, LIMITES_GRATIS.questoesPorDia - questoesHoje)
       : null;
-  const [limiteMensalAtingido, setLimiteMensalAtingido] = useState(false);
+  const [limiteSemanalAtingido, setLimiteSemanalAtingido] = useState(false);
   useEffect(() => {
     if (!plano.gratuito || !user) return;
-    void simuladoDoMesJaUsado(user.uid).then(setLimiteMensalAtingido).catch(() => {});
+    void simuladoDaSemanaJaUsado(user.uid).then(setLimiteSemanalAtingido).catch(() => {});
   }, [plano.gratuito, user]);
 
   useEffect(() => {
@@ -283,8 +283,8 @@ export default function NovoSimuladoClient() {
     setCreating(true);
     try {
       // Revalida o limite na hora de criar (o estado pode estar defasado)
-      if (plano.gratuito && (await simuladoDoMesJaUsado(user.uid))) {
-        setLimiteMensalAtingido(true);
+      if (plano.gratuito && (await simuladoDaSemanaJaUsado(user.uid))) {
+        setLimiteSemanalAtingido(true);
         return;
       }
       const selectedQuestions = await pickQuestions();
@@ -307,24 +307,24 @@ export default function NovoSimuladoClient() {
         answeredCount: 0, correctCount: 0, wrongCount: 0, scorePercent: 0,
         updatedAt: serverTimestamp(), createdAt: serverTimestamp(),
       });
-      // Gratuito: as regras exigem a "virada do mês" no contador no mesmo
-      // batch — é o que garante 1 simulado/mês no servidor.
+      // Gratuito: as regras exigem a "virada da semana" no contador no mesmo
+      // batch — é o que garante 1 simulado/semana no servidor.
       if (plano.gratuito) {
-        batch.set(doc(db, "users", user.uid, "meta", "planUso"), { simuladoMes: brtMesKey() }, { merge: true });
+        batch.set(doc(db, "users", user.uid, "meta", "planUso"), { simuladoSemana: brtSemanaKey() }, { merge: true });
       }
       await batch.commit();
       router.push(`/aluno/simulados/${sessionRef.id}`);
     } catch (e) {
       console.error(e);
       if (plano.gratuito && (e as { code?: string })?.code === "permission-denied") {
-        setLimiteMensalAtingido(true);
+        setLimiteSemanalAtingido(true);
       }
     } finally {
       setCreating(false);
     }
   };
 
-  const canCreate = !creating && availableCount > 0 && !(plano.gratuito && limiteMensalAtingido);
+  const canCreate = !creating && availableCount > 0 && !(plano.gratuito && limiteSemanalAtingido);
   const hasFilters = selectedAnos.length > 0 || selectedAreas.length > 0 || selectedAssuntos.length > 0;
 
   if (loading) {
@@ -520,11 +520,11 @@ export default function NovoSimuladoClient() {
         )}
       </div>
 
-      {plano.gratuito && limiteMensalAtingido && (
+      {plano.gratuito && limiteSemanalAtingido && (
         <div className="mt-6">
           <AvisoLimitePlano
-            titulo="Você já usou o simulado deste mês"
-            descricao="O plano gratuito inclui 1 simulado por mês. Assine para criar simulados ilimitados."
+            titulo="Você já usou o simulado desta semana"
+            descricao="O plano gratuito inclui 1 simulado por semana. Assine para criar simulados sem limite."
           />
         </div>
       )}

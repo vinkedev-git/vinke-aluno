@@ -36,22 +36,25 @@ service cloud.firestore {
       let t = request.time - duration.value(3, 'h');
       return string(t.year()) + '-' + pad2(t.month()) + '-' + pad2(t.day());
     }
-    function mesAtual() {
+    // Semana = bloco de 7 dias a partir de 1º de janeiro. Não é a semana ISO,
+    // mas é o que as regras conseguem calcular (há dayOfYear, não semana) e
+    // precisa bater com brtSemanaKey() de src/lib/plano.ts.
+    function semanaAtual() {
       let t = request.time - duration.value(3, 'h');
-      return string(t.year()) + '-' + pad2(t.month());
+      return string(t.year()) + '-W' + string((t.dayOfYear() - 1) / 7);
     }
 
     function planUsoPath(uid) {
       return /databases/$(database)/documents/users/$(uid)/meta/planUso;
     }
 
-    // A criação de sessão do gratuito precisa "virar o mês" no contador
-    // DENTRO do mesmo batch: antes != mês atual, depois == mês atual.
-    // Como a virada só é possível uma vez por mês, sai 1 simulado/mês.
-    function flipMesNoBatch(uid) {
-      return getAfter(planUsoPath(uid)).data.get('simuladoMes', '') == mesAtual()
+    // A criação de sessão do gratuito precisa "virar a semana" no contador
+    // DENTRO do mesmo batch: antes != semana atual, depois == semana atual.
+    // Como a virada só acontece uma vez, sai 1 simulado por semana.
+    function flipSemanaNoBatch(uid) {
+      return getAfter(planUsoPath(uid)).data.get('simuladoSemana', '') == semanaAtual()
         && !(exists(planUsoPath(uid))
-             && get(planUsoPath(uid)).data.get('simuladoMes', '') == mesAtual());
+             && get(planUsoPath(uid)).data.get('simuladoSemana', '') == semanaAtual());
     }
 
     // Uma resposta nova do gratuito precisa incrementar o contador diário
@@ -84,8 +87,8 @@ service cloud.firestore {
     // mês = mês atual (ou inalterado). Delete proibido (impediria reset).
     function planUsoValido() {
       let n = request.resource.data;
-      return n.keys().hasOnly(['diaKey', 'respostasDia', 'simuladoMes'])
-        && diaValido(n) && mesValido(n);
+      return n.keys().hasOnly(['diaKey', 'respostasDia', 'simuladoSemana', 'simuladoMes'])
+        && diaValido(n) && semanaValida(n);
     }
     function diaValido(n) {
       return !('diaKey' in n)
@@ -109,12 +112,12 @@ service cloud.firestore {
           )
         );
     }
-    function mesValido(n) {
-      return !('simuladoMes' in n)
+    function semanaValida(n) {
+      return !('simuladoSemana' in n)
         ? true
         : (
-          (resource != null && n.get('simuladoMes', '') == resource.data.get('simuladoMes', '§'))
-          || n.simuladoMes == mesAtual()
+          (resource != null && n.get('simuladoSemana', '') == resource.data.get('simuladoSemana', '§'))
+          || n.simuladoSemana == semanaAtual()
         );
     }
 
@@ -127,11 +130,11 @@ service cloud.firestore {
         allow read, write: if isOwner(uid);
       }
 
-      // Simulados do aluno. Gratuito: criação consome a virada mensal do
+      // Simulados do aluno. Gratuito: criação consome a virada semanal do
       // contador; respostas consomem o incremento diário.
       match /sessions/{sessionId} {
         allow read, delete: if isOwner(uid);
-        allow create: if isOwner(uid) && (!ehGratuito() || flipMesNoBatch(uid));
+        allow create: if isOwner(uid) && (!ehGratuito() || flipSemanaNoBatch(uid));
         allow update: if isOwner(uid)
           && (!ehGratuito() || !escritaDeResposta() || respostaContadaNoBatch(uid));
       }

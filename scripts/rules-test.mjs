@@ -31,7 +31,11 @@ const db = getFirestore(app);
 
 const brt = () => new Date(Date.now() - 3 * 3600e3);
 const diaKey = () => brt().toISOString().slice(0, 10);
-const mesKey = () => brt().toISOString().slice(0, 7);
+const semanaKey = () => {
+  const d = brt(), ano = d.getUTCFullYear();
+  const diaDoAno = Math.floor((Date.UTC(ano, d.getUTCMonth(), d.getUTCDate()) - Date.UTC(ano, 0, 1)) / 86400000) + 1;
+  return `${ano}-W${Math.floor((diaDoAno - 1) / 7)}`;
+};
 
 let passed = 0, failed = 0;
 function check(nome, ok, extra = "") {
@@ -83,24 +87,24 @@ async function main() {
     console.log("\n[GRATUITO]");
     const planUso = doc(db, "users", gUid, "meta", "planUso");
 
-    await esperaNegado("criar simulado SEM virada de mês", async () => {
+    await esperaNegado("criar simulado SEM virada de semana", async () => {
       const b = writeBatch(db);
       b.set(doc(collection(db, "users", gUid, "sessions")), sessData());
       await b.commit();
     });
 
     const s1 = doc(collection(db, "users", gUid, "sessions"));
-    await esperaOk("criar 1º simulado do mês COM virada", async () => {
+    await esperaOk("criar 1º simulado da semana COM virada", async () => {
       const b = writeBatch(db);
       b.set(s1, sessData());
-      b.set(planUso, { simuladoMes: mesKey() }, { merge: true });
+      b.set(planUso, { simuladoSemana: semanaKey() }, { merge: true });
       await b.commit();
     });
 
-    await esperaNegado("criar 2º simulado no mesmo mês", async () => {
+    await esperaNegado("criar 2º simulado na mesma semana", async () => {
       const b = writeBatch(db);
       b.set(doc(collection(db, "users", gUid, "sessions")), sessData());
-      b.set(planUso, { simuladoMes: mesKey() }, { merge: true });
+      b.set(planUso, { simuladoSemana: semanaKey() }, { merge: true });
       await b.commit();
     });
 
@@ -154,7 +158,7 @@ async function main() {
       b.set(doc(collection(db, "users", pUid, "sessions")), sessData());
       await b.commit();
     });
-    await esperaOk("criar SEGUNDO simulado no mês", async () => {
+    await esperaOk("criar SEGUNDO simulado na semana", async () => {
       const b = writeBatch(db);
       b.set(doc(collection(db, "users", pUid, "sessions")), sessData());
       await b.commit();

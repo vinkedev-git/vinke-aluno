@@ -15,7 +15,7 @@ import {
   writeBatch,
 } from "firebase/firestore";
 import { SkeletonList } from "@/components/ui/skeleton";
-import { usePlano, simuladoDoMesJaUsado, brtMesKey } from "@/lib/plano";
+import { usePlano, simuladoDaSemanaJaUsado, brtSemanaKey } from "@/lib/plano";
 import { AvisoLimitePlano } from "@/components/aluno/UpsellPlano";
 
 function cn(...xs: Array<string | false | null | undefined>) {
@@ -43,7 +43,7 @@ export default function ProvasPageClient() {
   const [rows, setRows] = useState<YearRow[]>([]);
   const [creating, setCreating] = useState<number | null>(null);
   const plano = usePlano();
-  const [limiteMensalAtingido, setLimiteMensalAtingido] = useState(false);
+  const [limiteSemanalAtingido, setLimiteSemanalAtingido] = useState(false);
 
   const load = useCallback(async () => {
     const u = auth.currentUser;
@@ -116,9 +116,9 @@ export default function ProvasPageClient() {
     if (!u || creating != null) return;
     setCreating(year);
     try {
-      // Plano gratuito: resolver uma prova completa conta como o simulado do mês
-      if (plano.gratuito && (await simuladoDoMesJaUsado(u.uid))) {
-        setLimiteMensalAtingido(true);
+      // Plano gratuito: resolver uma prova completa conta como o simulado da semana
+      if (plano.gratuito && (await simuladoDaSemanaJaUsado(u.uid))) {
+        setLimiteSemanalAtingido(true);
         setCreating(null);
         return;
       }
@@ -157,16 +157,16 @@ export default function ProvasPageClient() {
         updatedAt: serverTimestamp(),
         createdAt: serverTimestamp(),
       });
-      // Gratuito: virada do mês no contador no mesmo batch (regra do servidor)
+      // Gratuito: virada da semana no contador no mesmo batch (regra do servidor)
       if (plano.gratuito) {
-        batch.set(doc(db, "users", u.uid, "meta", "planUso"), { simuladoMes: brtMesKey() }, { merge: true });
+        batch.set(doc(db, "users", u.uid, "meta", "planUso"), { simuladoSemana: brtSemanaKey() }, { merge: true });
       }
       await batch.commit();
       router.push(`/aluno/simulados/${ref.id}`);
     } catch (e) {
       console.error(e);
       if (plano.gratuito && (e as { code?: string })?.code === "permission-denied") {
-        setLimiteMensalAtingido(true);
+        setLimiteSemanalAtingido(true);
       }
     } finally {
       setCreating(null);
@@ -186,10 +186,10 @@ export default function ProvasPageClient() {
         </span>
       </div>
 
-      {limiteMensalAtingido && (
+      {limiteSemanalAtingido && (
         <AvisoLimitePlano
-          titulo="Você já usou o simulado deste mês"
-          descricao="No plano gratuito, resolver uma prova completa usa o seu simulado mensal. Assine para treinar sem limites."
+          titulo="Você já usou o simulado desta semana"
+          descricao="No plano gratuito, resolver uma prova completa usa o seu simulado da semana. Assine para treinar sem limites."
         />
       )}
 
