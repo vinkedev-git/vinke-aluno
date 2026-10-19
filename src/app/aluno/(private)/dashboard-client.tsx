@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { auth, db } from "@/lib/firebase";
+import PedirCelular from "@/components/aluno/PedirCelular";
 import { collection, doc, getDoc, getDocs, limit, orderBy, query } from "firebase/firestore";
 import { Flame } from "lucide-react";
 import { getDailyStatus } from "@/lib/daily";
@@ -549,6 +550,8 @@ export default function DashboardClient() {
         diasParaProva={diasParaProva}
         streakCount={streakCount}
       />
+
+      <PedirCelular />
 
       {/* Linha herói: desempenho · meta · hoje */}
       <div className="flex flex-col gap-3.5 lg:flex-row">
