@@ -66,6 +66,9 @@ export async function POST(req: NextRequest) {
         name: nome,
         nome,
         email,
+        // O admin filtra alunos por role == "student"; sem isso a conta
+        // criada aqui some das telas de alunos, simulados e do dashboard.
+        role: "student",
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
         origem: "cadastro-self-service",
