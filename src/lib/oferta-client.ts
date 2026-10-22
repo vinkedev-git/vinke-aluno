@@ -21,7 +21,9 @@ export const LP_PLANOS_URL = "https://vinke.app.br/#planos";
 
 /** Dias inteiros até o 1º dia de prova (0 no dia; negativo depois). */
 export function diasParaEnem(now = new Date()): number {
-  return Math.ceil((ENEM_DIA1.getTime() - now.getTime()) / 86_400_000);
+  // diferença em dias de calendário no fuso de Brasília (UTC-3)
+  const dia = (d: Date) => Math.floor((d.getTime() - 3 * 3_600_000) / 86_400_000);
+  return dia(ENEM_DIA1) - dia(now);
 }
 
 /** Antes do ENEM a oferta é o Passe; depois, o Anual. */
