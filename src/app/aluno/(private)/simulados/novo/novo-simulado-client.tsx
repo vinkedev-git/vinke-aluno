@@ -605,8 +605,8 @@ export default function NovoSimuladoClient() {
       {plano.gratuito && limiteSemanalAtingido && (
         <div className="mt-6">
           <AvisoLimitePlano
-            titulo="Você já usou o simulado desta semana"
-            descricao="O plano gratuito inclui 1 simulado por semana. Assine para criar simulados sem limite."
+            titulo="Você já usou o simulado grátis desta semana"
+            origem="simulado"
           />
         </div>
       )}

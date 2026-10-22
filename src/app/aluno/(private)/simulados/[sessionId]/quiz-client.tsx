@@ -1135,7 +1135,7 @@ export default function QuizClient({ sessionId }: { sessionId: string }) {
               {limiteDiarioAtingido && (
                 <AvisoLimitePlano
                   titulo="Você usou suas 10 questões de hoje"
-                  descricao="Amanhã tem mais 10. Para treinar sem limite diário, assine um plano."
+                  origem="quiz"
                 />
               )}
               <button

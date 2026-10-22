@@ -188,6 +188,7 @@ export default function ProvasPageClient() {
 
       {limiteSemanalAtingido && (
         <AvisoLimitePlano
+          origem="provas"
           titulo="Você já usou o simulado desta semana"
           descricao="No plano gratuito, resolver uma prova completa usa o seu simulado da semana. Assine para treinar sem limites."
         />

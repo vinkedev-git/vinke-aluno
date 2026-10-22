@@ -9,6 +9,8 @@ import { Flame } from "lucide-react";
 import { getDailyStatus } from "@/lib/daily";
 import { getFlashcardOverview } from "@/lib/flashcards/stats";
 import { VinkeSymbol } from "@/components/VinkeLogo";
+import MuroPasse from "@/components/aluno/MuroPasse";
+import { usePlano, useQuestoesHoje, LIMITES_GRATIS } from "@/lib/plano";
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
 
@@ -261,6 +263,10 @@ async function buildPerformance(
 // ─── Componente ──────────────────────────────────────────────────────────────
 
 export default function DashboardClient() {
+  const plano = usePlano();
+  const questoesHoje = useQuestoesHoje();
+  const mostrarMuro =
+    plano.gratuito && questoesHoje != null && questoesHoje >= LIMITES_GRATIS.questoesPorDia;
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
   const [sessions, setSessions] = useState<SessionDoc[]>([]);
@@ -552,6 +558,10 @@ export default function DashboardClient() {
       />
 
       <PedirCelular />
+
+      {mostrarMuro && (
+        <MuroPasse origem="dashboard" titulo="Você fechou suas 10 questões de hoje" compacto />
+      )}
 
       {/* Linha herói: desempenho · meta · hoje */}
       <div className="flex flex-col gap-3.5 lg:flex-row">
