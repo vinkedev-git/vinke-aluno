@@ -10,6 +10,7 @@ import { getDailyStatus } from "@/lib/daily";
 import { getFlashcardOverview } from "@/lib/flashcards/stats";
 import { VinkeSymbol } from "@/components/VinkeLogo";
 import MuroPasse from "@/components/aluno/MuroPasse";
+import AvisoAberto from "@/components/aluno/AvisoAberto";
 import { usePlano, useQuestoesHoje, LIMITES_GRATIS } from "@/lib/plano";
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
@@ -558,6 +559,8 @@ export default function DashboardClient() {
       />
 
       <PedirCelular />
+
+      {plano.aberto && <AvisoAberto />}
 
       {mostrarMuro && (
         <MuroPasse origem="dashboard" titulo="Você fechou suas 10 questões de hoje" compacto />

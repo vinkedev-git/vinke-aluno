@@ -3,6 +3,7 @@ export const runtime = "nodejs";
 import { NextRequest, NextResponse } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
 import { getAdminAuth, getAdminDb } from "@/lib/firebaseAdmin";
+import { vinkeAbertoAtivo } from "@/lib/oferta-client";
 
 // Cadastro self-service do plano gratuito.
 // Criado pelo Admin SDK (e não pelo client) para que os docs de
@@ -106,6 +107,8 @@ export async function POST(req: NextRequest) {
         active: true,
         plan: "gratuito",
         productTitle: "Plano Gratuito",
+        // quem entrou durante o Vinke aberto (oferta de fundador em fevereiro)
+        ...(vinkeAbertoAtivo() ? { cohort: "aberto-2026" } : {}),
         source: "cadastro-self-service",
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),

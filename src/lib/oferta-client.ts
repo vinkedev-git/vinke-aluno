@@ -68,3 +68,14 @@ export function checkoutUrl(base: string, opts: { email?: string | null; nome?: 
 
 /** Rodapé do muro */
 export const LIMITE_LABEL = "Garantia de 7 dias. Cancele quando quiser. Amanhã suas 10 questões grátis voltam.";
+
+// ─── Vinke aberto ───────────────────────────────────────────────────────────
+// De 16/11/2026 a 31/01/2027 o plano gratuito tem TUDO liberado (turma 2027).
+// A mesma janela está nas firestore.rules (vinkeAberto) e no admin
+// (emailsGratuito.ts). Mudou aqui, muda lá.
+export const VINKE_ABERTO_INICIO = new Date("2026-11-16T00:00:00-03:00");
+export const VINKE_ABERTO_FIM = new Date("2027-02-01T00:00:00-03:00"); // exclusivo
+export const VINKE_ABERTO_FIM_LABEL = "31 de janeiro";
+export function vinkeAbertoAtivo(now = new Date()): boolean {
+  return now >= VINKE_ABERTO_INICIO && now < VINKE_ABERTO_FIM;
+}

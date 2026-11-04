@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { vinkeAbertoAtivo } from "@/lib/oferta-client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signInWithEmailAndPassword } from "firebase/auth";
@@ -12,6 +13,7 @@ const inputClass =
   "h-12 w-full rounded-[9px] border-[1.5px] border-vinke-line bg-white px-4 text-sm font-medium text-vinke-ink outline-none transition placeholder:text-vinke-ink3 focus:border-vinke focus:ring-[3px] focus:ring-vinke-ring dark:border-vinke-navy-line dark:bg-vinke-navy dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-vinke-lav dark:focus:ring-vinke/30";
 
 export default function CadastroClient() {
+  const aberto = vinkeAbertoAtivo();
   const router = useRouter();
 
   const [nome, setNome] = useState("");
@@ -101,23 +103,49 @@ export default function CadastroClient() {
                 <VinkeSymbol size={52} className="text-white" />
               </div>
               <h1 className="font-display text-2xl font-bold leading-tight text-vinke-ink dark:text-white">
-                Comece grátis.
-                <br />
-                Hoje mesmo.
+                {aberto ? (
+                  <>
+                    Vinke aberto.
+                    <br />
+                    Tudo liberado até 31/1.
+                  </>
+                ) : (
+                  <>
+                    Comece grátis.
+                    <br />
+                    Hoje mesmo.
+                  </>
+                )}
               </h1>
               <p className="mt-3 text-sm leading-6 text-vinke-ink3">
-                Sem cartão de crédito. Crie sua conta
-                <br />e faça sua primeira questão em 1 minuto.
+                {aberto ? (
+                  <>
+                    Sem cartão e sem limite diário. Crie sua conta
+                    <br />e comece a turma 2027 hoje.
+                  </>
+                ) : (
+                  <>
+                    Sem cartão de crédito. Crie sua conta
+                    <br />e faça sua primeira questão em 1 minuto.
+                  </>
+                )}
               </p>
             </div>
 
             {/* O que vem no grátis */}
             <div className="relative z-10 space-y-2">
-              {[
-                { icon: "✓", text: "10 questões oficiais comentadas por dia" },
-                { icon: "🗓️", text: "1 simulado completo por semana" },
-                { icon: "🔥", text: "Questão do dia e sequência de treino" },
-              ].map((f) => (
+              {(aberto
+                ? [
+                    { icon: "✓", text: "Questões oficiais sem limite até 31 de janeiro" },
+                    { icon: "🗓️", text: "Simulados completos, plano diário e caderno de erros" },
+                    { icon: "🔥", text: "Questão do dia e sequência de treino" },
+                  ]
+                : [
+                    { icon: "✓", text: "10 questões oficiais comentadas por dia" },
+                    { icon: "🗓️", text: "1 simulado completo por semana" },
+                    { icon: "🔥", text: "Questão do dia e sequência de treino" },
+                  ]
+              ).map((f) => (
                 <div
                   key={f.text}
                   className="flex items-center gap-3 rounded-2xl bg-vinke-offwhite px-4 py-3 dark:bg-vinke-navy"

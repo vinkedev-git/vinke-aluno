@@ -1,3 +1,4 @@
+import { vinkeAbertoAtivo } from "@/lib/oferta-client";
 import type { Module, ExamType, Difficulty, FlashcardStatus } from "./types";
 
 export const MODULES: Module[] = ["me", "tea", "tsa", "enem"];
@@ -57,5 +58,7 @@ export function planHasFlashcardsAccess(plan: {
   productId?: string | null;
 } | null | undefined): boolean {
   if (!plan) return false;
-  return String(plan.code ?? "") !== "gratuito";
+  if (String(plan.code ?? "") !== "gratuito") return true;
+  // Vinke aberto: o gratuito também tem flashcards (as rules liberam na mesma janela)
+  return vinkeAbertoAtivo();
 }

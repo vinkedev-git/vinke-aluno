@@ -22,6 +22,7 @@ import {
   where,
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
+import { vinkeAbertoAtivo } from "@/lib/oferta-client";
 
 export const LIMITES_GRATIS = {
   questoesPorDia: 10,
@@ -30,8 +31,10 @@ export const LIMITES_GRATIS = {
 
 export type PlanoInfo = {
   carregando: boolean;
-  /** true quando o aluno está no plano gratuito (recursos pagos bloqueados) */
+  /** true quando o aluno está no plano gratuito E os limites valem (fora do Vinke aberto) */
   gratuito: boolean;
+  /** true quando o aluno é do plano gratuito dentro do período Vinke aberto (tudo liberado) */
+  aberto: boolean;
   plan: string;
 };
 
@@ -143,7 +146,7 @@ export async function simuladoDaSemanaJaUsado(uid: string): Promise<boolean> {
 }
 
 export function usePlano(): PlanoInfo {
-  const [info, setInfo] = useState<PlanoInfo>({ carregando: true, gratuito: false, plan: "" });
+  const [info, setInfo] = useState<PlanoInfo>({ carregando: true, gratuito: false, aberto: false, plan: "" });
 
   useEffect(() => {
     let unsubEnt: (() => void) | null = null;
@@ -151,7 +154,7 @@ export function usePlano(): PlanoInfo {
       unsubEnt?.();
       unsubEnt = null;
       if (!user) {
-        setInfo({ carregando: false, gratuito: false, plan: "" });
+        setInfo({ carregando: false, gratuito: false, aberto: false, plan: "" });
         return;
       }
       unsubEnt = onSnapshot(
@@ -160,13 +163,14 @@ export function usePlano(): PlanoInfo {
           const data = snap.exists() ? (snap.data() as { plan?: unknown }) : null;
           setInfo({
             carregando: false,
-            gratuito: isPlanoGratuito(data),
+            gratuito: isPlanoGratuito(data) && !vinkeAbertoAtivo(),
+            aberto: isPlanoGratuito(data) && vinkeAbertoAtivo(),
             plan: String(data?.plan ?? ""),
           });
         },
         () => {
           // Falha de leitura não bloqueia: assume pago para não travar quem pagou.
-          setInfo({ carregando: false, gratuito: false, plan: "" });
+          setInfo({ carregando: false, gratuito: false, aberto: false, plan: "" });
         }
       );
     });
