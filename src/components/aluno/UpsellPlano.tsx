@@ -5,6 +5,7 @@
 // que traz o resumo do dia e a oferta com checkout direto.
 import { usePlano } from "@/lib/plano";
 import MuroPasse from "@/components/aluno/MuroPasse";
+import SeloPremium from "@/components/aluno/SeloPremium";
 
 /**
  * Envolve uma página que é exclusiva de plano pago: mostra o upsell para
@@ -15,11 +16,14 @@ export function GatePlanoPago({
   descricao,
   children,
   origem = "gate",
+  recurso,
 }: {
   titulo: string;
   descricao: string;
   children: React.ReactNode;
   origem?: string;
+  /** nome do recurso para o selo do Vinke aberto (ex.: "O caderno de erros") */
+  recurso?: string;
 }) {
   const plano = usePlano();
   if (plano.carregando) {
@@ -36,7 +40,12 @@ export function GatePlanoPago({
       </div>
     );
   }
-  return <>{children}</>;
+  return (
+    <>
+      {recurso && <SeloPremium recurso={recurso} />}
+      {children}
+    </>
+  );
 }
 
 export function UpsellPlano({

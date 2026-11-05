@@ -26,6 +26,7 @@ type Entitlement = {
   currency?: string | null;
 
   source?: string | null;
+  plan?: string | null;
 };
 
 type TimestampLike = {
@@ -270,6 +271,15 @@ export default function AssinaturaClient() {
                   {/* Card sempre navy: cores claras fixas, sem tokens de tinta do tema */}
                   <div className="text-[10px] font-semibold tracking-[0.12em] text-slate-400">SEU PLANO</div>
                   <div className="mt-1 truncate font-display text-xl font-bold text-white">{planName}</div>
+                  {ent?.plan === "gratuito" && (
+                    <button
+                      type="button"
+                      onClick={() => router.push("/aluno/planos")}
+                      className="mt-3 rounded-[10px] bg-white px-4 py-2 text-sm font-bold text-vinke-navy transition hover:bg-white/90"
+                    >
+                      Ver planos
+                    </button>
+                  )}
                   <div className="mt-2 text-sm text-slate-300">
                     E-mail:{" "}
                     <span className="font-semibold text-slate-100">

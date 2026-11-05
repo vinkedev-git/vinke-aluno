@@ -10,7 +10,8 @@ import { useEffect, useMemo, useState } from "react";
 import { doc, getDoc, setDoc, increment, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { track } from "@/components/MetaPixel";
-import { ofertaAtual, checkoutUrl, LP_PLANOS_URL, LIMITE_LABEL } from "@/lib/oferta-client";
+import Link from "next/link";
+import { ofertaAtual, checkoutUrl, LIMITE_LABEL } from "@/lib/oferta-client";
 
 type Stats = {
   todayAnswered: number;
@@ -109,9 +110,9 @@ export default function MuroPasse({
           >
             {oferta.cta}
           </a>
-          <a href={LP_PLANOS_URL} target="_blank" rel="noreferrer" className="text-xs font-semibold text-vinke-ink3 underline-offset-2 hover:underline">
+          <Link href="/aluno/planos" className="text-xs font-semibold text-vinke-ink3 underline-offset-2 hover:underline">
             ver mensal e anual
-          </a>
+          </Link>
         </div>
         <span className="text-[11px] text-vinke-ink4">{LIMITE_LABEL}</span>
       </div>
@@ -135,9 +136,9 @@ export default function MuroPasse({
       >
         {oferta.cta}
       </a>
-      <a href={LP_PLANOS_URL} target="_blank" rel="noreferrer" className="text-xs font-semibold text-vinke-ink3 underline-offset-2 hover:underline">
+      <Link href="/aluno/planos" className="text-xs font-semibold text-vinke-ink3 underline-offset-2 hover:underline">
         ver planos mensal e anual
-      </a>
+      </Link>
       <span className="text-xs font-medium text-vinke-ink4">{LIMITE_LABEL}</span>
     </div>
   );

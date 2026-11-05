@@ -15,6 +15,7 @@ import {
   Sparkles,
   Settings2,
   CreditCard,
+  Crown,
   User,
   LogOut,
   Sun,
@@ -148,6 +149,7 @@ export default function AlunoSidebar({
         <Item href="/aluno/provas" label="Provas ENEM" Icon={FileText} onNavigate={onNavigate} />
         <Item href="/aluno/flashcards" label="Flashcards" Icon={Layers} onNavigate={onNavigate} badge="Novo" />
         <Item href="/aluno/caderno" label="Caderno de Erros" Icon={NotebookPen} onNavigate={onNavigate} badge="Novo" />
+        <Item href="/aluno/planos" label="Planos" Icon={Crown} onNavigate={onNavigate} />
         <Item href="/aluno/assinatura" label="Assinatura" Icon={CreditCard} onNavigate={onNavigate} />
         <Item href="/aluno/perfil" label="Perfil" Icon={User} onNavigate={onNavigate} />
         <Item href="/aluno/configuracoes" label="Metas diárias" Icon={Settings2} onNavigate={onNavigate} />
