@@ -58,9 +58,17 @@ export async function recordFlashcardSession(uid: string, count: number): Promis
     const snap = await getDoc(statsRef);
     const prev = snap.exists() ? (snap.data() as Record<string, unknown>) : {};
     const today = dayKey();
-    const isNewDay = safeStr(prev.todayKey) !== today;
+    // Chave PRÓPRIA. `todayKey` é do contador de questões (recordAnswer o
+    // escreve, e plano.ts o usa para saber se todayAnswered é de hoje).
+    // Escrever nele aqui faria o plano tratar as questões de ONTEM como de
+    // hoje sempre que o aluno abrisse o dia pelos flashcards.
+    const isNewDay = safeStr(prev.todayFlashcardsKey) !== today;
     const todayFlashcards = isNewDay ? count : (Number(prev.todayFlashcards ?? 0) + count);
-    await setDoc(statsRef, { todayFlashcards, todayKey: today, updatedAt: serverTimestamp() }, { merge: true });
+    await setDoc(
+      statsRef,
+      { todayFlashcards, todayFlashcardsKey: today, updatedAt: serverTimestamp() },
+      { merge: true }
+    );
   } catch (e) {
     console.error("[study-tracking] falha ao atualizar flashcards do dia:", e);
   }

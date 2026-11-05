@@ -21,6 +21,7 @@ import {
   saveProgress,
 } from "@/lib/flashcards/queries";
 import { initialSrsState, scheduleNext } from "@/lib/flashcards/srs";
+import { recordFlashcardSession } from "@/lib/study-tracking";
 import type { SrsAnswer, UserFlashcardProgressDoc } from "@/lib/flashcards/types";
 
 export default function EstudarClient() {
@@ -203,6 +204,11 @@ export default function EstudarClient() {
   useEffect(() => {
     if (isDone && uid && sessionStats.reviewed > 0) {
       void bumpStreakAndReviews(uid, sessionStats.reviewed, sessionStats.newMastered);
+      // bumpStreakAndReviews grava só no doc de flashcards (streak, total).
+      // O "Estudo de hoje" lê users/{uid}/meta/stats.todayFlashcards, que
+      // ninguém escrevia: o contador ficava 0/10 e a tarefa nunca riscava,
+      // por mais cards que o aluno revisasse.
+      void recordFlashcardSession(uid, sessionStats.reviewed);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDone]);

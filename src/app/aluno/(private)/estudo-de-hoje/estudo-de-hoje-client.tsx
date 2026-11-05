@@ -112,7 +112,12 @@ export default function EstudoDeHojeClient() {
       const settings = settingsSnap.exists() ? settingsSnap.data() as Record<string, unknown> : {};
 
       const todayAnswered = Number(stats.todayAnswered ?? 0);
-      const todayFlashcards = Number(stats.todayFlashcards ?? 0);
+      // Só conta se for do dia corrente: o contador fica gravado e sem a
+      // checagem de data o total de ontem apareceria como se fosse de hoje.
+      const todayFlashcards =
+        String(stats.todayFlashcardsKey ?? "") === dayKey()
+          ? Number(stats.todayFlashcards ?? 0)
+          : 0;
       const dailyQuestionsGoal = Number(settings.dailyQuestionsGoal ?? 20);
       const dailyFlashcardsGoal = Number(settings.dailyFlashcardsGoal ?? 10);
 
