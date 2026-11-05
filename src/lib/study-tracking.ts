@@ -74,6 +74,30 @@ export async function recordFlashcardSession(uid: string, count: number): Promis
   }
 }
 
+/**
+ * Incrementa o contador de erros do caderno revisados hoje.
+ * Chave de dia PRÓPRIA (`todayErrorsKey`), pelo mesmo motivo dos flashcards:
+ * escrever em `todayKey` faria o plano tratar as questões de ontem como de hoje.
+ */
+export async function recordErrorReview(uid: string, count = 1): Promise<void> {
+  if (!uid || count <= 0) return;
+  try {
+    const statsRef = doc(db, "users", uid, "meta", "stats");
+    const snap = await getDoc(statsRef);
+    const prev = snap.exists() ? (snap.data() as Record<string, unknown>) : {};
+    const today = dayKey();
+    const isNewDay = safeStr(prev.todayErrorsKey) !== today;
+    const todayErrors = isNewDay ? count : (Number(prev.todayErrors ?? 0) + count);
+    await setDoc(
+      statsRef,
+      { todayErrors, todayErrorsKey: today, updatedAt: serverTimestamp() },
+      { merge: true }
+    );
+  } catch (e) {
+    console.error("[study-tracking] falha ao atualizar erros do dia:", e);
+  }
+}
+
 export type RecordAnswerInput = {
   uid: string;
   question: RawQuestion;
@@ -144,6 +168,11 @@ export async function recordAnswer(input: RecordAnswerInput): Promise<void> {
     const errRef = doc(db, "users", uid, "errorNotebook", qid);
     const snap = await getDoc(errRef);
     const exists = snap.exists();
+    // Vale como revisão do caderno se a questão já estava pendente ANTES desta
+    // resposta — acertando (resolve) ou errando (continua pendente). É o que
+    // alimenta a dose diária de erros no /estudo-de-hoje.
+    const eraPendente =
+      exists && safeStr((snap.data() as Record<string, unknown>).status ?? "pending") === "pending";
 
     if (!isCorrect) {
       // Errou → entra (ou volta) para pendente
@@ -190,6 +219,8 @@ export async function recordAnswer(input: RecordAnswerInput): Promise<void> {
         { merge: true }
       );
     }
+
+    if (eraPendente) await recordErrorReview(uid, 1);
   } catch (e) {
     console.error("[study-tracking] falha ao atualizar caderno de erros:", e);
   }

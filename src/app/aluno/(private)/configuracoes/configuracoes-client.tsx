@@ -11,6 +11,7 @@ import { Settings2, CheckCircle2, Target, Zap } from "lucide-react";
 type Settings = {
   dailyQuestionsGoal: number;
   dailyFlashcardsGoal: number;
+  dailyErrorsGoal: number;
   dailyMinutesGoal: number;
   studyDays: string[];
   targetExam: string;
@@ -21,6 +22,7 @@ type Settings = {
 const DEFAULTS: Settings = {
   dailyQuestionsGoal: 20,
   dailyFlashcardsGoal: 10,
+  dailyErrorsGoal: 5,
   dailyMinutesGoal: 30,
   studyDays: ["segunda", "terça", "quarta", "quinta", "sexta"],
   targetExam: "",
@@ -65,6 +67,7 @@ export default function ConfiguracoesClient() {
         setForm({
           dailyQuestionsGoal: Number(data.dailyQuestionsGoal ?? DEFAULTS.dailyQuestionsGoal),
           dailyFlashcardsGoal: Number(data.dailyFlashcardsGoal ?? DEFAULTS.dailyFlashcardsGoal),
+          dailyErrorsGoal: Number(data.dailyErrorsGoal ?? DEFAULTS.dailyErrorsGoal),
           dailyMinutesGoal: Number(data.dailyMinutesGoal ?? DEFAULTS.dailyMinutesGoal),
           studyDays: Array.isArray(data.studyDays) ? data.studyDays : DEFAULTS.studyDays,
           targetExam: String(data.targetExam ?? ""),
@@ -155,6 +158,15 @@ export default function ConfiguracoesClient() {
             value={form.dailyFlashcardsGoal}
             min={1} max={50}
             onChange={(v) => setNum("dailyFlashcardsGoal", v, 1, 50)}
+          />
+          {/* Erros do caderno */}
+          <GoalRow
+            label="Erros do caderno"
+            icon={<Zap size={14} className="text-vinke" />}
+            hint="Erros refeitos por dia, dos mais antigos para os mais novos"
+            value={form.dailyErrorsGoal}
+            min={1} max={30}
+            onChange={(v) => setNum("dailyErrorsGoal", v, 1, 30)}
           />
         </div>
       </div>

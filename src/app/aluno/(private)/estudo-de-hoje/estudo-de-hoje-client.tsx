@@ -81,6 +81,9 @@ type PlanData = {
   dailyFlashcardsGoal: number;
   flashcardsDue: number;
   errorsPending: number;
+  dailyErrorsGoal: number;
+  todayErrors: number;
+  errorsToday: number;
   dailyAnswered: boolean;
 };
 
@@ -111,7 +114,10 @@ export default function EstudoDeHojeClient() {
       const stats = statsSnap.exists() ? statsSnap.data() as Record<string, unknown> : {};
       const settings = settingsSnap.exists() ? settingsSnap.data() as Record<string, unknown> : {};
 
-      const todayAnswered = Number(stats.todayAnswered ?? 0);
+      // Todos os contadores do dia precisam da checagem de data: ficam gravados
+      // e, sem ela, o total de ontem aparece como se fosse de hoje.
+      const todayAnswered =
+        String(stats.todayKey ?? "") === dayKey() ? Number(stats.todayAnswered ?? 0) : 0;
       // Só conta se for do dia corrente: o contador fica gravado e sem a
       // checagem de data o total de ontem apareceria como se fosse de hoje.
       const todayFlashcards =
@@ -120,6 +126,9 @@ export default function EstudoDeHojeClient() {
           : 0;
       const dailyQuestionsGoal = Number(settings.dailyQuestionsGoal ?? 20);
       const dailyFlashcardsGoal = Number(settings.dailyFlashcardsGoal ?? 10);
+      const dailyErrorsGoal = Number(settings.dailyErrorsGoal ?? 5);
+      const todayErrors =
+        String(stats.todayErrorsKey ?? "") === dayKey() ? Number(stats.todayErrors ?? 0) : 0;
 
       // Tema fraco (byTheme com amostra mínima de 5)
       let weakTheme: string | null = null;
@@ -144,13 +153,19 @@ export default function EstudoDeHojeClient() {
         Math.max(0, dailyFlashcardsGoal - todayFlashcards)
       );
 
-      // Erros pendentes
-      const errorsPending = Math.min(
+      // Fila inteira do caderno (o acervo, sem teto) …
+      const errorsPending = errorSnap.docs.filter((d) => {
+        const e = d.data() as { status?: string };
+        return (e.status ?? "pending") === "pending";
+      }).length;
+
+      // … e a dose de hoje: o que falta da meta diária, limitada pela fila e
+      // pelo teto de uma sessão. O caderno é um acervo que só cresce; sem uma
+      // dose ele nunca ficaria "feito" e viveria como pendência eterna.
+      const errorsToday = Math.min(
         MAX_REVIEWS,
-        errorSnap.docs.filter((d) => {
-          const e = d.data() as { status?: string };
-          return (e.status ?? "pending") === "pending";
-        }).length
+        errorsPending,
+        Math.max(0, dailyErrorsGoal - todayErrors)
       );
 
       setPlan({
@@ -161,6 +176,9 @@ export default function EstudoDeHojeClient() {
         dailyFlashcardsGoal,
         flashcardsDue,
         errorsPending,
+        dailyErrorsGoal,
+        todayErrors,
+        errorsToday,
         dailyAnswered: dailyStatus?.answered ?? false,
       });
     } finally {
@@ -217,15 +235,17 @@ export default function EstudoDeHojeClient() {
       {
         id: "caderno",
         title: "Caderno de erros",
-        subtitle: plan.errorsPending > 0
-          ? `${plan.errorsPending} ${plan.errorsPending > 1 ? "questões" : "questão"} para revisar`
-          : "Nenhum erro pendente ✓",
+        subtitle: plan.errorsToday > 0
+          ? `${plan.errorsToday} de hoje · ${plan.errorsPending} guardados`
+          : plan.errorsPending > 0
+            ? `Meta de ${plan.dailyErrorsGoal} erros atingida ✓ · ${plan.errorsPending} guardados`
+            : "Nenhum erro pendente ✓",
         icon: <NotebookPen size={20} />,
-        count: plan.errorsPending,
-        estimatedMin: plan.errorsPending * MIN_PER_REVIEW,
-        done: plan.errorsPending === 0,
+        count: plan.errorsToday,
+        estimatedMin: plan.errorsToday * MIN_PER_REVIEW,
+        done: plan.errorsToday === 0,
         color: "rose",
-        action: plan.errorsPending > 0 ? `Refazer ${plan.errorsPending} erro${plan.errorsPending > 1 ? "s" : ""}` : "Ver caderno",
+        action: plan.errorsToday > 0 ? `Refazer ${plan.errorsToday} erro${plan.errorsToday > 1 ? "s" : ""}` : "Ver caderno",
       },
       {
         id: "questoes-novas",
@@ -269,25 +289,25 @@ export default function EstudoDeHojeClient() {
         break;
       }
       case "caderno":
-        if (plan && plan.errorsPending > 0 && !creating) {
+        if (plan && plan.errorsToday > 0 && !creating) {
           // Cria simulado com erros pendentes (mesmo fluxo do caderno)
           setCreating(true);
           try {
             const errorSnap = await getDocs(collection(db, "users", u.uid, "errorNotebook"));
-            const pending = errorSnap.docs
-              .filter((d) => {
-                const e = d.data() as { status?: string };
-                return (e.status ?? "pending") === "pending";
-              })
-              .map((d) => safeStr((d.data() as { questionId?: unknown }).questionId))
-              .filter(Boolean);
-
-            const shuffled = [...pending];
-            for (let i = shuffled.length - 1; i > 0; i--) {
-              const j = Math.floor(Math.random() * (i + 1));
-              [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-            }
-            const questionIds = shuffled.slice(0, 15);
+            // Mais antigos primeiro: sem ordem, um erro pode ficar anos na fila
+            // sem nunca cair no sorteio. Ordena pelo momento do último erro
+            // (cai para createdAt, e para o fim da fila quando não há data).
+            const quando = (v: Record<string, unknown>) => {
+              const t = (v.lastWrongAt ?? v.createdAt) as { toMillis?: () => number } | undefined;
+              return typeof t?.toMillis === "function" ? t.toMillis() : Number.MAX_SAFE_INTEGER;
+            };
+            const questionIds = errorSnap.docs
+              .map((d) => d.data() as Record<string, unknown>)
+              .filter((e) => (safeStr(e.status) || "pending") === "pending")
+              .sort((a, b) => quando(a) - quando(b))
+              .map((e) => safeStr(e.questionId))
+              .filter(Boolean)
+              .slice(0, plan.errorsToday);
 
             const ref = await addDoc(collection(db, "users", u.uid, "sessions"), {
               title: "Revisão de erros",
@@ -339,7 +359,13 @@ export default function EstudoDeHojeClient() {
   const flashPct = plan && plan.dailyFlashcardsGoal > 0
     ? Math.min(100, Math.round((plan.todayFlashcards / plan.dailyFlashcardsGoal) * 100))
     : 0;
-  const dayPct = Math.round((questoesPct + flashPct) / 2);
+  // O caderno entra no anel agora que tem meta: antes o anel podia marcar 100%
+  // com o bloco do caderno ainda pendente na mesma tela.
+  const errosPct = plan && plan.dailyErrorsGoal > 0 && plan.errorsPending + plan.todayErrors > 0
+    ? Math.min(100, Math.round((plan.todayErrors / plan.dailyErrorsGoal) * 100))
+    : null;
+  const partes = [questoesPct, flashPct, ...(errosPct === null ? [] : [errosPct])];
+  const dayPct = Math.round(partes.reduce((a, b) => a + b, 0) / partes.length);
 
   // ── Tudo concluído ─────────────────────────────────────────────────────────
   if (allDone) {
