@@ -432,6 +432,21 @@ export default function QuizClient({ sessionId }: { sessionId: string }) {
     return () => clearHeader();
   }, [clearHeader]);
 
+  // Ao trocar de questão o conteúdo muda inteiro, mas o scroll fica onde
+  // estava: depois de ler um comentário longo, o aluno abria a próxima
+  // questão já no rodapé e tinha de subir à mão para achar o enunciado.
+  // Fica aqui, no índice, e não dentro de onNext/onPrev/jumpTo, para valer
+  // em qualquer caminho de navegação — inclusive o mapa da prova.
+  // Sem animação: a tela trocou de conteúdo, deslizar até o topo só atrasa.
+  const primeiroRender = useRef(true);
+  useEffect(() => {
+    if (primeiroRender.current) {
+      primeiroRender.current = false;
+      return;     // na montagem o navegador já restaura a posição que quiser
+    }
+    window.scrollTo(0, 0);
+  }, [currentIndex]);
+
   useEffect(() => {
     if (!session) return;
     clockBaseRef.current = Number(session.timeSpentMs ?? 0);
