@@ -259,9 +259,15 @@ export default function EstudoDeHojeClient() {
       case "questao-do-dia":
         router.push("/aluno/questao-do-dia");
         break;
-      case "flashcards":
-        router.push("/aluno/flashcards/estudar");
+      case "flashcards": {
+        // O botão diz "Revisar N", onde N já respeita a meta diária do aluno
+        // e desconta o que ele revisou hoje. Sem o ?n=, a tela de estudo
+        // monta a fila pelo teto global do módulo (20) e o aluno via "10" no
+        // plano e 20 cards na sessão.
+        const n = plan?.flashcardsDue ?? 0;
+        router.push(`/aluno/flashcards/estudar${n > 0 ? `?n=${n}` : ""}`);
         break;
+      }
       case "caderno":
         if (plan && plan.errorsPending > 0 && !creating) {
           // Cria simulado com erros pendentes (mesmo fluxo do caderno)
