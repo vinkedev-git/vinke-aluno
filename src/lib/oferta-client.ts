@@ -19,14 +19,27 @@ export const PRECO = {
 
 export const LP_PLANOS_URL = "https://vinke.app.br/#planos";
 
+// diferença em dias de calendário no fuso de Brasília (UTC-3)
+const diaBRT = (d: Date) => Math.floor((d.getTime() - 3 * 3_600_000) / 86_400_000);
+
 /** Dias inteiros até o 1º dia de prova (0 no dia; negativo depois). */
 export function diasParaEnem(now = new Date()): number {
-  // diferença em dias de calendário no fuso de Brasília (UTC-3)
-  const dia = (d: Date) => Math.floor((d.getTime() - 3 * 3_600_000) / 86_400_000);
-  return dia(ENEM_DIA1) - dia(now);
+  return diaBRT(ENEM_DIA1) - diaBRT(now);
 }
 
-/** Antes do ENEM a oferta é o Passe; depois, o Anual. */
+/**
+ * Próximo dia de prova que ainda vale treinar: o 1º dia até 7/11 e o 2º dia
+ * (Matemática e Natureza) de 8/11 a 14/11. null a partir do dia 15.
+ */
+export function proximaProva(now = new Date()): { dia: 1 | 2; dias: number } | null {
+  const d1 = diaBRT(ENEM_DIA1) - diaBRT(now);
+  if (d1 > 0) return { dia: 1, dias: d1 };
+  const d2 = diaBRT(ENEM_DIA2) - diaBRT(now);
+  if (d2 > 0) return { dia: 2, dias: d2 };
+  return null;
+}
+
+/** Até a véspera do 2º dia a oferta é o Passe; depois, o Anual. */
 export function ofertaAtual(now = new Date()): {
   plano: "passe" | "anual";
   titulo: string;
@@ -35,13 +48,18 @@ export function ofertaAtual(now = new Date()): {
   cta: string;
   url: string;
 } {
-  const dias = diasParaEnem(now);
-  if (dias > 0) {
+  const prova = proximaProva(now);
+  if (prova) {
+    const { dia, dias } = prova;
+    const alvo = dia === 1 ? "o ENEM" : "o 2º dia do ENEM";
     return {
       plano: "passe",
-      titulo: dias === 1 ? "Falta 1 dia para o ENEM" : `Faltam ${dias} dias para o ENEM`,
+      titulo: dias === 1 ? `Falta 1 dia para ${alvo}` : `Faltam ${dias} dias para ${alvo}`,
       preco: PRECO.passe,
-      detalhe: "Passe Reta Final: tudo liberado até o fim da prova. Pagamento único, garantia de 7 dias.",
+      detalhe:
+        dia === 1
+          ? "Passe Reta Final: tudo liberado até o fim da prova. Pagamento único, garantia de 7 dias."
+          : "Passe Reta Final: Matemática e Natureza sem limite até o 2º dia, com simulados no tempo da prova. Pagamento único, garantia de 7 dias.",
       cta: `Garantir o Passe por ${PRECO.passe}`,
       url: CHECKOUT.passe,
     };
