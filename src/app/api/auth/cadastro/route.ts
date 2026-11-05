@@ -29,6 +29,7 @@ export async function POST(req: NextRequest) {
     const body = (await req.json()) as {
       nome?: unknown; email?: unknown; senha?: unknown;
       celular?: unknown; aceitaContato?: unknown;
+      anoEnem?: unknown; origem?: unknown;
     };
     const nome = typeof body.nome === "string" ? body.nome.trim() : "";
     const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
@@ -39,6 +40,15 @@ export async function POST(req: NextRequest) {
     // Consentimento para contato comercial (WhatsApp) — precisa ser um ato
     // afirmativo do aluno; sem ele o telefone serve só para conta/suporte.
     const aceitaContato = body.aceitaContato === true && celular !== "";
+    // Ano do ENEM declarado (separa a turma 2026 da 2027) e origem do cadastro
+    // (cookie vk_origem da LP ou utm na URL). Só chaves conhecidas, texto curto.
+    const anoEnem = ["2026", "2027", "2028+", "nao-sei"].includes(String(body.anoEnem)) ? String(body.anoEnem) : null;
+    const origemBruta = (body.origem && typeof body.origem === "object" ? body.origem : {}) as Record<string, unknown>;
+    const aquisicao: Record<string, string> = {};
+    for (const k of ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "clid", "referrer", "landing", "em"]) {
+      const v = origemBruta[k];
+      if (typeof v === "string" && v.trim()) aquisicao[k] = v.trim().slice(0, 120);
+    }
 
     if (nome.length < 2) {
       return NextResponse.json({ ok: false, error: "Digite seu nome." }, { status: 400 });
@@ -85,6 +95,8 @@ export async function POST(req: NextRequest) {
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
         origem: "cadastro-self-service",
+        ...(anoEnem ? { anoEnem } : {}),
+        aquisicao: Object.keys(aquisicao).length > 0 ? aquisicao : { referrer: "desconhecido" },
       },
       { merge: true }
     );

@@ -8,6 +8,7 @@ import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { VinkeSymbol } from "@/components/VinkeLogo";
 import { track } from "@/components/MetaPixel";
+import { lerOrigem, ANOS_ENEM } from "@/lib/origem";
 
 const inputClass =
   "h-12 w-full rounded-[9px] border-[1.5px] border-vinke-line bg-white px-4 text-sm font-medium text-vinke-ink outline-none transition placeholder:text-vinke-ink3 focus:border-vinke focus:ring-[3px] focus:ring-vinke-ring dark:border-vinke-navy-line dark:bg-vinke-navy dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-vinke-lav dark:focus:ring-vinke/30";
@@ -21,6 +22,7 @@ export default function CadastroClient() {
   const [senha, setSenha] = useState("");
   const [celular, setCelular] = useState("");
   const [aceitaContato, setAceitaContato] = useState(false);
+  const [anoEnem, setAnoEnem] = useState("");
   const [loading, setLoading] = useState(false);
   const [uiError, setUiError] = useState("");
 
@@ -51,6 +53,10 @@ export default function CadastroClient() {
       setUiError("A senha precisa ter pelo menos 6 caracteres.");
       return;
     }
+    if (!anoEnem) {
+      setUiError("Escolha em que ano você vai fazer o ENEM.");
+      return;
+    }
 
     setLoading(true);
     try {
@@ -63,6 +69,8 @@ export default function CadastroClient() {
           senha,
           celular: celular.replace(/\D/g, ""),
           aceitaContato,
+          anoEnem,
+          origem: lerOrigem(),
         }),
       });
       const data = (await res.json()) as { ok?: boolean; error?: string };
@@ -218,6 +226,34 @@ export default function CadastroClient() {
                   placeholder="Mínimo de 6 caracteres"
                   className={inputClass}
                 />
+              </div>
+
+              <div>
+                <div className="mb-1.5 text-xs font-bold text-vinke-ink dark:text-slate-200">
+                  Em que ano você vai fazer o ENEM?
+                </div>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4" role="radiogroup" aria-label="Ano do ENEM">
+                  {ANOS_ENEM.map((a) => {
+                    const sel = anoEnem === a.valor;
+                    return (
+                      <button
+                        key={a.valor}
+                        type="button"
+                        role="radio"
+                        aria-checked={sel}
+                        onClick={() => setAnoEnem(a.valor)}
+                        className={[
+                          "h-11 rounded-[9px] border-[1.5px] px-2 text-[13px] font-semibold transition",
+                          sel
+                            ? "border-vinke bg-vinke-soft text-vinke dark:border-vinke-lav dark:bg-vinke/15 dark:text-vinke-lav"
+                            : "border-vinke-line bg-white text-vinke-ink2 hover:border-vinke/50 dark:border-vinke-navy-line dark:bg-vinke-navy dark:text-slate-200",
+                        ].join(" ")}
+                      >
+                        {a.label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               <div>
