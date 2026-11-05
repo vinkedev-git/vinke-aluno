@@ -397,8 +397,10 @@ export default function NovoSimuladoClient() {
     );
   }
 
+  // O pb reserva espaço para as DUAS barras fixas (criar + tab bar) não
+  // taparem o último cartão; no desktop só existe a de criar.
   return (
-    <div className="space-y-6 pb-28">
+    <div className="space-y-6 pb-[calc(10rem+env(safe-area-inset-bottom))] lg:pb-28">
 
       {/* Header */}
       <div>
@@ -612,7 +614,14 @@ export default function NovoSimuladoClient() {
       )}
 
       {/* BARRA FIXA NO RODAPÉ */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-vinke-line bg-white/95 backdrop-blur dark:border-vinke-navy-line dark:bg-vinke-navy/95">
+      {/* As duas barras eram "fixed bottom-0 z-40" e a tab bar, por vir
+          depois no layout, cobria metade do botão "Criar simulado".
+          Em vez de subir a barra (o que abriria uma fresta entre as duas
+          quando há safe area), ela continua no rodapé e ganha um padding
+          da altura da tab bar: o conteúdo sobe, o fundo encosta, sem vão.
+          4rem espelha o pb-16 que o layout já reserva para a tab bar.
+          No desktop a tab bar é lg:hidden, então o padding zera. */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 border-t border-vinke-line bg-white/95 pb-[calc(4rem+env(safe-area-inset-bottom))] backdrop-blur lg:pb-0 dark:border-vinke-navy-line dark:bg-vinke-navy/95">
         <div className="mx-auto flex max-w-[1200px] items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-10">
           <div className="min-w-0">
             <div className="text-sm font-bold text-vinke-ink dark:text-slate-100">
