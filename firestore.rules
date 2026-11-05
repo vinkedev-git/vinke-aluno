@@ -142,7 +142,12 @@ service cloud.firestore {
       // contador; respostas consomem o incremento diário.
       match /sessions/{sessionId} {
         allow read, delete: if isOwner(uid);
-        allow create: if isOwner(uid) && (!ehGratuito() || flipSemanaNoBatch(uid));
+        // Diagnóstico do 1º acesso (kind "diagnostico", até 10 questões) não
+        // gasta o simulado da semana; as respostas seguem contando no diário.
+        allow create: if isOwner(uid) && (!ehGratuito() || flipSemanaNoBatch(uid)
+          || (request.resource.data.get('kind', '') == 'diagnostico'
+              && request.resource.data.questionIds is list
+              && request.resource.data.questionIds.size() <= 10));
         allow update: if isOwner(uid)
           && (!ehGratuito() || !escritaDeResposta() || respostaContadaNoBatch(uid));
       }

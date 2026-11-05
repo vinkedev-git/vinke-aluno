@@ -11,6 +11,7 @@ import { getFlashcardOverview } from "@/lib/flashcards/stats";
 import { VinkeSymbol } from "@/components/VinkeLogo";
 import MuroPasse from "@/components/aluno/MuroPasse";
 import AvisoAberto from "@/components/aluno/AvisoAberto";
+import CardDiagnostico from "@/components/aluno/CardDiagnostico";
 import { usePlano, useQuestoesHoje, LIMITES_GRATIS } from "@/lib/plano";
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
@@ -567,6 +568,8 @@ export default function DashboardClient() {
       />
 
       <PedirCelular />
+
+      <CardDiagnostico />
 
       {plano.aberto && <AvisoAberto />}
 

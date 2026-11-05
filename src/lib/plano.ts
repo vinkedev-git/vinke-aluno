@@ -142,7 +142,10 @@ export async function simuladoDaSemanaJaUsado(uid: string): Promise<boolean> {
       where("createdAt", ">=", Timestamp.fromDate(inicio))
     )
   );
-  return snap.docs.some((d) => (d.data() as { kind?: unknown }).kind !== "error_review");
+  return snap.docs.some((d) => {
+    const kind = (d.data() as { kind?: unknown }).kind;
+    return kind !== "error_review" && kind !== "diagnostico";
+  });
 }
 
 export function usePlano(): PlanoInfo {

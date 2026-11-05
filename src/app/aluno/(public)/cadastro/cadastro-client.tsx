@@ -82,7 +82,7 @@ export default function CadastroClient() {
       // Conta criada — entra direto.
       track("CompleteRegistration", { content_name: "Plano gratuito" });
       await signInWithEmailAndPassword(auth, eMail, senha);
-      router.replace("/aluno");
+      router.replace("/aluno/diagnostico");
     } catch {
       setUiError("Não foi possível criar sua conta. Verifique sua conexão e tente novamente.");
     } finally {

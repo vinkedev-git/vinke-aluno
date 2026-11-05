@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { auth, db } from "@/lib/firebase";
+import { AREAS_DIAGNOSTICO, marcarDiagnosticoConcluido } from "@/lib/diagnostico";
 import {
   addDoc,
   collection,
@@ -40,6 +41,7 @@ type QuestionRow = {
   index: number;
   snippet: string;
   assunto: string;
+  area: string;
   selected: string;
   correct: string;
   status: "correct" | "wrong" | "blank";
@@ -168,6 +170,7 @@ export default function ResultadoClient({ sessionId }: { sessionId: string }) {
         qids.map(async (qid, i) => {
           let snippet = "";
           let assunto = "";
+          let area = "";
           let correct = "";
           try {
             const qSnap = await getDoc(doc(db, "questionsBank", qid));
@@ -177,6 +180,7 @@ export default function ResultadoClient({ sessionId }: { sessionId: string }) {
               const assuntos = Array.isArray(q.assuntos) ? q.assuntos : Array.isArray(q.themes) ? q.themes : [];
               assunto = String(assuntos[0] ?? q.disciplina ?? q.area ?? "").trim();
               correct = String(q.correctOptionId ?? "").trim();
+              area = String(q.areaId ?? "").trim();
             }
           } catch {
             /* ignora questão que falhou */
@@ -188,7 +192,7 @@ export default function ResultadoClient({ sessionId }: { sessionId: string }) {
             : ans?.isCorrect
               ? "correct"
               : "wrong";
-          return { id: qid, index: i + 1, snippet, assunto, selected, correct, status };
+          return { id: qid, index: i + 1, snippet, assunto, area, selected, correct, status };
         })
       );
       setRows(docs);
@@ -231,6 +235,28 @@ export default function ResultadoClient({ sessionId }: { sessionId: string }) {
       .sort((a, b) => b.total - a.total)
       .slice(0, 5);
   }, [rows]);
+
+  // Diagnóstico: acerto por área e a área mais fraca (empate: a de mais questões)
+  const ehDiagnostico = session?.kind === "diagnostico";
+  const porArea = useMemo(() => {
+    if (!ehDiagnostico) return [];
+    return AREAS_DIAGNOSTICO.map((a) => {
+      const linhas = rows.filter((r) => r.area === a.id && r.status !== "blank");
+      const correct = linhas.filter((r) => r.status === "correct").length;
+      return { id: a.id, nome: a.nome, total: linhas.length, correct, pct: linhas.length ? Math.round((correct / linhas.length) * 100) : 0 };
+    }).filter((a) => a.total > 0);
+  }, [ehDiagnostico, rows]);
+  const piorArea = useMemo(
+    () => [...porArea].sort((a, b) => a.pct - b.pct || b.total - a.total)[0] ?? null,
+    [porArea]
+  );
+
+  useEffect(() => {
+    const u = auth.currentUser;
+    if (!u || !ehDiagnostico || session?.status !== "completed" || rowsLoading || rows.length === 0) return;
+    const resumo = Object.fromEntries(porArea.map((a) => [a.id, { total: a.total, correct: a.correct }]));
+    void marcarDiagnosticoConcluido(u.uid, sessionId, resumo).catch(() => {});
+  }, [ehDiagnostico, session?.status, rowsLoading, rows.length, porArea, sessionId]);
 
   const melhorQueAnteriores =
     previousScores.length > 0 && previousScores.every((p) => stats.score > p);
@@ -329,6 +355,55 @@ export default function ResultadoClient({ sessionId }: { sessionId: string }) {
           Resultado{formatDateShort(session.updatedAt) ? ` · ${formatDateShort(session.updatedAt)}` : ""}
         </span>
       </div>
+
+      {ehDiagnostico ? (
+        <div className="flex flex-col gap-4 rounded-2xl border-[1.5px] border-vinke bg-white p-6 dark:bg-vinke-navy-card">
+          <div>
+            <span className="text-[10px] font-bold tracking-[0.14em] text-vinke dark:text-vinke-lav">SEU DIAGNÓSTICO</span>
+            <h2 className="mt-1 font-display text-xl font-bold text-vinke-ink dark:text-white">
+              {stats.blank > 0
+                ? `Faltam ${stats.blank} ${stats.blank === 1 ? "questão" : "questões"} para fechar o diagnóstico`
+                : piorArea
+                  ? `Comece por ${piorArea.nome}: é onde você tem mais pontos para ganhar.`
+                  : "Diagnóstico concluído."}
+            </h2>
+          </div>
+          {rowsLoading ? (
+            <span className="text-xs text-vinke-ink3">Calculando…</span>
+          ) : (
+            <div className="grid gap-2.5 sm:grid-cols-2">
+              {porArea.map((a) => (
+                <div key={a.id} className="flex items-center gap-2.5">
+                  <span className="w-[86px] shrink-0 text-xs font-semibold text-vinke-ink dark:text-slate-200">{a.nome}</span>
+                  <div className="h-2 min-w-0 flex-1 rounded-full bg-vinke-line2 dark:bg-vinke-navy-sel">
+                    <div className={cn("h-2 rounded-full", a.id === piorArea?.id ? "bg-vinke-amber-bar" : "bg-vinke")} style={{ width: `${Math.max(4, a.pct)}%` }} />
+                  </div>
+                  <span className="shrink-0 font-display text-xs font-bold text-vinke-ink dark:text-white">
+                    {a.correct}/{a.total}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+          <p className="text-xs leading-5 text-vinke-ink3">
+            Com 10 questões, isso é um ponto de partida, não uma nota. Cada questão que você responder daqui em diante deixa o retrato mais preciso, e os erros vão para o caderno.
+          </p>
+          <div className="flex flex-col gap-2 sm:flex-row">
+            {stats.blank > 0 ? (
+              <Link href={`/aluno/simulados/${sessionId}`} className="rounded-[10px] bg-vinke px-5 py-3 text-center text-sm font-bold text-white">
+                Continuar o diagnóstico
+              </Link>
+            ) : (
+              <Link href="/aluno/estudo-de-hoje" className="rounded-[10px] bg-vinke px-5 py-3 text-center text-sm font-bold text-white shadow-[0_18px_40px_rgba(98,54,240,0.28)]">
+                Ver meu plano de hoje
+              </Link>
+            )}
+            <Link href="/aluno" className="rounded-[10px] border-[1.5px] border-vinke-line px-5 py-3 text-center text-sm font-bold text-vinke-ink dark:border-vinke-navy-line dark:text-slate-200">
+              Ir para o início
+            </Link>
+          </div>
+        </div>
+      ) : null}
 
       {/* Hero + acerto por assunto */}
       <div className="flex flex-col gap-3.5 lg:flex-row">

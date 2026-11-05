@@ -17,6 +17,7 @@ function getBreadcrumb(pathname: string | null) {
   if (pathname.startsWith("/aluno/ranking")) return "Ranking";
   if (pathname.startsWith("/aluno/assinatura")) return "Assinatura";
   if (pathname.startsWith("/aluno/planos")) return "Planos";
+  if (pathname.startsWith("/aluno/diagnostico")) return "Diagnóstico";
   if (pathname.startsWith("/aluno/perfil")) return "Perfil";
 
   return "Início";
