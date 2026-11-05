@@ -218,7 +218,7 @@ export default function EstudoDeHojeClient() {
         id: "caderno",
         title: "Caderno de erros",
         subtitle: plan.errorsPending > 0
-          ? `${plan.errorsPending} questão${plan.errorsPending > 1 ? "s" : ""} para revisar`
+          ? `${plan.errorsPending} ${plan.errorsPending > 1 ? "questões" : "questão"} para revisar`
           : "Nenhum erro pendente ✓",
         icon: <NotebookPen size={20} />,
         count: plan.errorsPending,
@@ -231,7 +231,7 @@ export default function EstudoDeHojeClient() {
         id: "questoes-novas",
         title: "Questões novas",
         subtitle: newQuestionsCount > 0
-          ? `${newQuestionsCount} questões${plan.weakTheme ? ` de ${plan.weakTheme}` : " do banco"}`
+          ? `${newQuestionsCount} ${newQuestionsCount > 1 ? "questões" : "questão"}${plan.weakTheme ? ` de ${plan.weakTheme}` : " do banco"}`
           : `Meta de ${plan.dailyQuestionsGoal} questões atingida ✓`,
         icon: <BookOpen size={20} />,
         count: newQuestionsCount,

@@ -470,6 +470,14 @@ export default function DashboardClient() {
     return Math.round((parts.reduce((a, b) => a + b, 0) / parts.length) * 100);
   }, [todayProgress, dailyGoals]);
 
+  // Flashcards a mostrar hoje: o que venceu no SM-2, limitado ao que falta
+  // da meta diária — a mesma conta do /estudo-de-hoje, para os dois números
+  // não se contradizerem na mesma tela.
+  const flashcardsHoje = Math.min(
+    flashcardStats.due,
+    Math.max(0, dailyGoals.flashcardsGoal - todayProgress.flashcards),
+  );
+
   const weakestArea = useMemo(() => {
     if (areaPerformance.length < 2) return null;
     return [...areaPerformance].sort((a, b) => a.accuracy - b.accuracy)[0];
@@ -751,12 +759,12 @@ export default function DashboardClient() {
               </Link>
             ) : null}
           </div>
-          {flashcardStats.due > 0 ? (
+          {flashcardsHoje > 0 ? (
             <Link
               href="/aluno/flashcards"
               className="flex items-center justify-between rounded-2xl bg-vinke-soft px-5 py-3.5 text-xs font-bold text-vinke transition hover:bg-vinke-ring dark:bg-vinke/15 dark:text-vinke-lav"
             >
-              <span>{flashcardStats.due} flashcards para revisar hoje</span>
+              <span>{flashcardsHoje} {flashcardsHoje > 1 ? "flashcards" : "flashcard"} para revisar hoje</span>
               <span>→</span>
             </Link>
           ) : null}

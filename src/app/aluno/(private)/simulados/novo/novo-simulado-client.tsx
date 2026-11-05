@@ -627,7 +627,8 @@ export default function NovoSimuladoClient() {
             <div className="text-sm font-bold text-vinke-ink dark:text-slate-100">
               {availableCount > 0 ? (
                 <>
-                  <span className="text-vinke dark:text-vinke-lav">{effectiveQuestionCount}</span> questão(ões)
+                  <span className="text-vinke dark:text-vinke-lav">{effectiveQuestionCount}</span>{" "}
+                  {effectiveQuestionCount === 1 ? "questão" : "questões"}
                 </>
               ) : (
                 <span className="text-vinke-red dark:text-vinke-red-dark">Sem questões disponíveis</span>
