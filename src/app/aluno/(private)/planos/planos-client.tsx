@@ -9,6 +9,7 @@ import { doc, setDoc, increment, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { usePlano } from "@/lib/plano";
 import { track } from "@/components/MetaPixel";
+import OfertaFundador from "@/components/aluno/OfertaFundador";
 import { CHECKOUT, PRECO, checkoutUrl, ofertaAtual, VINKE_ABERTO_FIM_LABEL } from "@/lib/oferta-client";
 
 const GRATIS = ["10 questões oficiais por dia", "1 simulado por semana", "Questão do dia e sequência", "Desempenho por área"];
@@ -100,6 +101,8 @@ export default function PlanosClient() {
           </div>
         </div>
       </div>
+
+      {(plano.aberto || plano.gratuito) && <OfertaFundador origem="planos" />}
 
       {plano.aberto ? (
         <div className="flex flex-col gap-3 rounded-2xl bg-vinke-navy p-5 text-white sm:flex-row sm:items-center sm:justify-between">

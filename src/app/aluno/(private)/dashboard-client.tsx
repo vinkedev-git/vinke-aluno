@@ -13,6 +13,7 @@ import MuroPasse from "@/components/aluno/MuroPasse";
 import AvisoAberto from "@/components/aluno/AvisoAberto";
 import CardDiagnostico from "@/components/aluno/CardDiagnostico";
 import AvisoProva2026 from "@/components/aluno/AvisoProva2026";
+import { CardFundadorInicio } from "@/components/aluno/OfertaFundador";
 import { usePlano, useQuestoesHoje, LIMITES_GRATIS } from "@/lib/plano";
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
@@ -575,6 +576,8 @@ export default function DashboardClient() {
       <CardDiagnostico />
 
       {plano.aberto && <AvisoAberto />}
+
+      <CardFundadorInicio />
 
       {mostrarMuro && (
         <MuroPasse origem="dashboard" titulo="Você fechou suas 10 questões de hoje" compacto />

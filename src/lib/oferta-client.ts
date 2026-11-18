@@ -6,12 +6,15 @@ export const ENEM_DIA1 = new Date("2026-11-08T13:30:00-03:00");
 export const ENEM_DIA2 = new Date("2026-11-15T13:30:00-03:00");
 
 export const CHECKOUT = {
+  /** Anual Fundador (produto próprio na Eduzz). Vazio = oferta desligada. */
+  fundador: "",
   passe: "https://sun.eduzz.com/G96RR56EW1",
   mensal: "https://sun.eduzz.com/1W322JN592",
   anual: "https://sun.eduzz.com/40QRRBZ19B",
 } as const;
 
 export const PRECO = {
+  fundador: "12x R$ 14,90",
   passe: "R$ 49,90",
   mensal: "R$ 34,90/mês",
   anual: "12x R$ 19,90",
@@ -96,4 +99,17 @@ export const VINKE_ABERTO_FIM = new Date("2027-02-01T00:00:00-03:00"); // exclus
 export const VINKE_ABERTO_FIM_LABEL = "31 de janeiro";
 export function vinkeAbertoAtivo(now = new Date()): boolean {
   return now >= VINKE_ABERTO_INICIO && now < VINKE_ABERTO_FIM;
+}
+
+// ─── Anual Fundador ─────────────────────────────────────────────────────────
+// 12x R$ 14,90 (R$ 178,80) até 31/01/2027; os 12 meses contam a partir de
+// 1º/02/2027 (webhook do admin, plano "anual-fundador"). Mesmo prazo da LP e
+// do e-mail de janeiro (admin/src/lib/emailsGratuito.ts).
+export const FUNDADOR_FIM = new Date("2027-02-01T00:00:00-03:00"); // exclusivo
+export function fundadorAtivo(now = new Date()): boolean {
+  return Boolean(CHECKOUT.fundador) && now < FUNDADOR_FIM;
+}
+export function diasParaFimFundador(now = new Date()): number {
+  const dia = (d: Date) => Math.floor((d.getTime() - 3 * 3_600_000) / 86_400_000);
+  return dia(FUNDADOR_FIM) - dia(now);
 }
