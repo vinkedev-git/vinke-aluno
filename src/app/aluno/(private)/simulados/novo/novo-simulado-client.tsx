@@ -198,6 +198,16 @@ export default function NovoSimuladoClient() {
     if ([10, 20, 30, 45, 90].includes(rawQtd)) setQtd(rawQtd);
   }, [searchParams]);
 
+  // ?ano=2026 (ou ?ano=2025,2026): já abre com o(s) ano(s) marcado(s). Usado pelo
+  // botão "Por área" da tela Provas e pelo aviso da prova 2026 no início.
+  useEffect(() => {
+    const anos = (searchParams.get("ano") || "")
+      .split(",")
+      .map((a) => a.trim())
+      .filter((a) => /^\d{4}$/.test(a));
+    if (anos.length) setSelectedAnos((prev) => Array.from(new Set([...prev, ...anos])));
+  }, [searchParams]);
+
   useEffect(() => {
     const rawAssunto = (searchParams.get("assunto") || searchParams.get("tema") || "").trim();
     if (!rawAssunto || assuntos.length === 0) return;

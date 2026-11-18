@@ -12,6 +12,7 @@ import { VinkeSymbol } from "@/components/VinkeLogo";
 import MuroPasse from "@/components/aluno/MuroPasse";
 import AvisoAberto from "@/components/aluno/AvisoAberto";
 import CardDiagnostico from "@/components/aluno/CardDiagnostico";
+import AvisoProva2026 from "@/components/aluno/AvisoProva2026";
 import { usePlano, useQuestoesHoje, LIMITES_GRATIS } from "@/lib/plano";
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
@@ -568,6 +569,8 @@ export default function DashboardClient() {
       />
 
       <PedirCelular />
+
+      <AvisoProva2026 />
 
       <CardDiagnostico />
 
