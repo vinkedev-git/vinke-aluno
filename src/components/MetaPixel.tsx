@@ -7,7 +7,7 @@ import Script from "next/script";
 /**
  * Meta Pixel do Vinke. Só carrega se NEXT_PUBLIC_META_PIXEL_ID estiver definido.
  * - PageView em toda navegação.
- * - InitiateCheckout em qualquer clique em link da Eduzz (sun.eduzz.com), com o
+ * - InitiateCheckout em qualquer clique em link da Eduzz (sun.eduzz.com ou chk.eduzz.com), com o
  *   nome do plano, sem precisar tocar nos componentes da página.
  * Eventos adicionais: chame `track("Lead")` etc. a partir de qualquer client component.
  */
@@ -19,6 +19,7 @@ const PLANOS: Record<string, { name: string; value: number }> = {
   "1W322JN592": { name: "Mensal", value: 34.9 },
   "40QRRBZ19B": { name: "Anual", value: 238.8 },
   G96RR56EW1: { name: "Passe Reta Final", value: 49.9 },
+  "8017XZ2N07": { name: "Anual Fundador", value: 178.8 },
 };
 
 type Fbq = (...args: unknown[]) => void;
@@ -46,7 +47,7 @@ export default function MetaPixel() {
   useEffect(() => {
     if (!PIXEL_ID) return;
     const onClick = (e: MouseEvent) => {
-      const a = (e.target as HTMLElement | null)?.closest?.("a[href*='sun.eduzz.com']") as HTMLAnchorElement | null;
+      const a = (e.target as HTMLElement | null)?.closest?.("a[href*='sun.eduzz.com'], a[href*='chk.eduzz.com']") as HTMLAnchorElement | null;
       if (!a) return;
       const code = a.href.split("/").pop()?.split("?")[0] ?? "";
       const plano = PLANOS[code];

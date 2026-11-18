@@ -7,7 +7,7 @@ export const ENEM_DIA2 = new Date("2026-11-15T13:30:00-03:00");
 
 export const CHECKOUT = {
   /** Anual Fundador (produto próprio na Eduzz). Vazio = oferta desligada. */
-  fundador: "",
+  fundador: "https://chk.eduzz.com/8017XZ2N07",
   passe: "https://sun.eduzz.com/G96RR56EW1",
   mensal: "https://sun.eduzz.com/1W322JN592",
   anual: "https://sun.eduzz.com/40QRRBZ19B",
