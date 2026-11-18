@@ -76,8 +76,9 @@ export default function ProvasPageClient() {
       const counts = await Promise.all(
         Array.from({ length: ANO_MAX - ANO_MIN + 1 }, (_, i) => ANO_MIN + i).map(async (year) => {
           try {
+            // só ativas: anuladas e provas ainda em revisão não entram na contagem
             const c = await getCountFromServer(
-              query(collection(db, "questionsBank"), where("examYear", "==", year))
+              query(collection(db, "questionsBank"), where("examYear", "==", year), where("isActive", "==", true))
             );
             return { year, total: c.data().count };
           } catch {
