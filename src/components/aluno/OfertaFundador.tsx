@@ -10,6 +10,7 @@ import { doc, getDoc, increment, serverTimestamp, setDoc } from "firebase/firest
 import { auth, db } from "@/lib/firebase";
 import { usePlano } from "@/lib/plano";
 import { CHECKOUT, PRECO, checkoutUrl, diasParaFimFundador, fundadorAtivo } from "@/lib/oferta-client";
+import { useDentroDoApp } from "@/lib/app-nativo";
 
 function registrarClique(origem: string) {
   const u = auth.currentUser;
@@ -27,7 +28,8 @@ function prazoTexto() {
 }
 
 export default function OfertaFundador({ origem }: { origem: string }) {
-  if (!fundadorAtivo()) return null;
+  const noApp = useDentroDoApp();
+  if (!fundadorAtivo() || noApp) return null;
   const u = auth.currentUser;
   const url = checkoutUrl(CHECKOUT.fundador, { email: u?.email, nome: u?.displayName, origem: `fundador-${origem}` });
   return (
@@ -58,6 +60,7 @@ export default function OfertaFundador({ origem }: { origem: string }) {
 
 export function CardFundadorInicio() {
   const plano = usePlano();
+  const noApp = useDentroDoApp();
   const [mostrar, setMostrar] = useState(false);
 
   useEffect(() => {
@@ -78,8 +81,8 @@ export function CardFundadorInicio() {
     });
   }, []);
 
-  // só para o plano grátis (dentro ou fora do período aberto)
-  if (!mostrar || plano.carregando || (!plano.aberto && !plano.gratuito)) return null;
+  // só para o plano grátis (dentro ou fora do período aberto); nunca no app
+  if (noApp || !mostrar || plano.carregando || (!plano.aberto && !plano.gratuito)) return null;
 
   const fechar = () => {
     setMostrar(false);

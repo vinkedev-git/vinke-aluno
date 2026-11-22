@@ -11,6 +11,7 @@ import { usePlano } from "@/lib/plano";
 import { track } from "@/components/MetaPixel";
 import OfertaFundador from "@/components/aluno/OfertaFundador";
 import { CHECKOUT, PRECO, checkoutUrl, ofertaAtual, VINKE_ABERTO_FIM_LABEL } from "@/lib/oferta-client";
+import { useDentroDoApp } from "@/lib/app-nativo";
 
 const GRATIS = ["10 questões oficiais por dia", "1 simulado por semana", "Questão do dia e sequência", "Desempenho por área"];
 const PREMIUM = [
@@ -36,6 +37,7 @@ function Lista({ itens, ok }: { itens: string[]; ok: boolean }) {
 
 export default function PlanosClient() {
   const plano = usePlano();
+  const noApp = useDentroDoApp();
   const u = auth.currentUser;
   const oferta = ofertaAtual();
   const pago = !plano.carregando && !plano.gratuito && !plano.aberto;
@@ -60,6 +62,16 @@ export default function PlanosClient() {
 
   if (plano.carregando) {
     return <div className="grid min-h-[40vh] place-items-center text-sm text-vinke-ink3">Carregando…</div>;
+  }
+  if (noApp) {
+    return (
+      <div className="mx-auto max-w-[560px] rounded-3xl border border-vinke-line bg-white p-8 text-center dark:border-vinke-navy-line dark:bg-vinke-navy-card">
+        <h1 className="font-display text-xl font-bold text-vinke-ink dark:text-white">Planos</h1>
+        <p className="mt-2 text-sm leading-6 text-vinke-ink3 dark:text-slate-300">
+          Os planos não podem ser contratados pelo app. Se você já tem um plano, é só entrar com a mesma conta: tudo fica liberado aqui.
+        </p>
+      </div>
+    );
   }
 
   return (

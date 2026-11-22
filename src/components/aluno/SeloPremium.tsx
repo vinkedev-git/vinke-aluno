@@ -5,9 +5,11 @@
 import Link from "next/link";
 import { usePlano } from "@/lib/plano";
 import { VINKE_ABERTO_FIM_LABEL } from "@/lib/oferta-client";
+import { useDentroDoApp } from "@/lib/app-nativo";
 
 export default function SeloPremium({ recurso }: { recurso: string }) {
   const plano = usePlano();
+  const noApp = useDentroDoApp();
   if (!plano.aberto) return null;
   return (
     <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-vinke/30 bg-vinke-soft px-4 py-2.5 text-[13px] dark:bg-vinke/10">
@@ -15,9 +17,11 @@ export default function SeloPremium({ recurso }: { recurso: string }) {
       <span className="font-semibold text-vinke-ink dark:text-white">
         {recurso} é premium e está liberado para você até {VINKE_ABERTO_FIM_LABEL}.
       </span>
-      <Link href="/aluno/planos" className="font-semibold text-vinke underline-offset-2 hover:underline dark:text-vinke-lav">
-        ver planos
-      </Link>
+      {!noApp && (
+        <Link href="/aluno/planos" className="font-semibold text-vinke underline-offset-2 hover:underline dark:text-vinke-lav">
+          ver planos
+        </Link>
+      )}
     </div>
   );
 }

@@ -6,6 +6,7 @@ import { doc, getDoc, Timestamp } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { CHECKOUT, checkoutUrl, fundadorAtivo } from "@/lib/oferta-client";
+import { useDentroDoApp } from "@/lib/app-nativo";
 
 type Entitlement = {
   uid?: string;
@@ -100,6 +101,7 @@ function reasonBannerText(reason: string | null) {
 
 export default function AssinaturaClient() {
   const router = useRouter();
+  const noApp = useDentroDoApp();
 
   const user = auth.currentUser;
 
@@ -159,7 +161,7 @@ export default function AssinaturaClient() {
     if (!validUntilDate) return null;
     if (remainingDays === null) return null;
 
-    if (remainingDays < 0) return { tone: "danger", text: "Sua assinatura venceu. Você segue no plano grátis; use Renovar para voltar a ter tudo liberado." };
+    if (remainingDays < 0) return { tone: "danger", text: "Sua assinatura venceu. Você segue no plano grátis." };
     if (remainingDays === 0) return { tone: "warning", text: "Sua assinatura vence hoje." };
     if (remainingDays <= 7) return { tone: "warning", text: `Sua assinatura vence em ${remainingDays} dias.` };
 
@@ -269,7 +271,7 @@ export default function AssinaturaClient() {
                   {/* Card sempre navy: cores claras fixas, sem tokens de tinta do tema */}
                   <div className="text-[10px] font-semibold tracking-[0.12em] text-slate-400">SEU PLANO</div>
                   <div className="mt-1 truncate font-display text-xl font-bold text-white">{planName}</div>
-                  {(ent?.plan === "gratuito" || expired || ent?.active === false) && (
+                  {!noApp && (ent?.plan === "gratuito" || expired || ent?.active === false) && (
                     <div className="mt-3 flex flex-wrap gap-2">
                       {ent?.plan !== "gratuito" && (
                         <a

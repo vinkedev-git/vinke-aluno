@@ -13,6 +13,7 @@ import { auth, db } from "@/lib/firebase";
 import { track } from "@/components/MetaPixel";
 import Link from "next/link";
 import { ofertaAtual, checkoutUrl, LIMITE_LABEL } from "@/lib/oferta-client";
+import { useDentroDoApp } from "@/lib/app-nativo";
 
 type Stats = {
   todayAnswered: number;
@@ -80,6 +81,7 @@ export default function MuroPasse({
 }) {
   const oferta = useMemo(() => ofertaAtual(), []);
   const resumo = useResumoHoje();
+  const noApp = useDentroDoApp();
   const u = auth.currentUser;
   const url = checkoutUrl(oferta.url, { email: u?.email, nome: u?.displayName, origem });
 
@@ -101,10 +103,12 @@ export default function MuroPasse({
       <div className="flex flex-col gap-3 rounded-2xl border border-vinke-line bg-vinke-soft p-5 dark:border-vinke-navy-line dark:bg-vinke/10">
         {titulo && <div className="text-sm font-bold text-vinke-ink dark:text-white">{titulo}</div>}
         {resumoLinha && <div className="text-xs font-semibold text-vinke-ink3 dark:text-slate-300">{resumoLinha}</div>}
-        <div className="text-sm font-semibold text-vinke-ink dark:text-white">
-          {oferta.titulo}. {oferta.detalhe}
-        </div>
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        {!noApp && (
+          <div className="text-sm font-semibold text-vinke-ink dark:text-white">
+            {oferta.titulo}. {oferta.detalhe}
+          </div>
+        )}
+        {!noApp && <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <a
             href={url}
             onClick={onClick}
@@ -115,7 +119,7 @@ export default function MuroPasse({
           <Link href="/aluno/planos" className="text-xs font-semibold text-vinke-ink3 underline-offset-2 hover:underline">
             ver mensal e anual
           </Link>
-        </div>
+        </div>}
         <span className="text-[11px] text-vinke-ink4">{LIMITE_LABEL}</span>
       </div>
     );
@@ -129,6 +133,7 @@ export default function MuroPasse({
           {resumoLinha}
         </div>
       )}
+      {!noApp && <>
       <div className="font-display text-2xl font-bold text-vinke dark:text-vinke-lav">{oferta.titulo}</div>
       <p className="text-sm leading-6 text-vinke-ink3 dark:text-slate-300">{oferta.detalhe}</p>
       <a
@@ -141,6 +146,7 @@ export default function MuroPasse({
       <Link href="/aluno/planos" className="text-xs font-semibold text-vinke-ink3 underline-offset-2 hover:underline">
         ver planos mensal e anual
       </Link>
+      </>}
       <span className="text-xs font-medium text-vinke-ink4">{LIMITE_LABEL}</span>
     </div>
   );
