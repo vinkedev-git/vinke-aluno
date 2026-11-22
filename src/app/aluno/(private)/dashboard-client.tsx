@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { lerHoje } from "@/lib/study-tracking";
 import Link from "next/link";
 import { auth, db } from "@/lib/firebase";
 import PedirCelular from "@/components/aluno/PedirCelular";
@@ -319,16 +320,9 @@ export default function DashboardClient() {
       }
 
       if (statsSnap.exists()) {
-        const s = statsSnap.data() as {
-          streakCount?: number;
-          todayAnswered?: number;
-          todayFlashcards?: number;
-        };
-        setStreakCount(Number(s.streakCount ?? 0));
-        setTodayProgress({
-          questions: Number(s.todayAnswered ?? 0),
-          flashcards: Number(s.todayFlashcards ?? 0),
-        });
+        const h = lerHoje(statsSnap.data() as Record<string, unknown>);
+        setStreakCount(h.sequencia);
+        setTodayProgress({ questions: h.questoes, flashcards: h.flashcards });
       }
 
       setErrorNotebookCount(

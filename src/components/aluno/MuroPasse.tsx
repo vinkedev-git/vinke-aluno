@@ -7,6 +7,7 @@
 // ViewContent no Pixel; o InitiateCheckout sai sozinho no clique (MetaPixel.tsx).
 
 import { useEffect, useMemo, useState } from "react";
+import { lerHoje } from "@/lib/study-tracking";
 import { doc, getDoc, setDoc, increment, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { track } from "@/components/MetaPixel";
@@ -40,8 +41,9 @@ function useResumoHoje(): Stats | null {
             pior = tema;
           }
         }
-        const ta = Number(d.todayAnswered ?? 0);
-        const tc = Number(d.todayCorrect ?? 0);
+        const hoje = lerHoje(d);
+        const ta = hoje.questoes;
+        const tc = hoje.certas;
         if (alive) setS({ todayAnswered: ta, todayCorrect: tc, piorTema: pior, erros: Math.max(0, ta - tc) });
       } catch {
         if (alive) setS({ todayAnswered: 0, todayCorrect: 0, piorTema: null, erros: 0 });

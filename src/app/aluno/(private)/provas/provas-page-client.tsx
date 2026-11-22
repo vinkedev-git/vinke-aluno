@@ -38,8 +38,11 @@ type SessionLike = {
   status?: string;
   filters?: { anos?: unknown[] };
   answeredCount?: number;
+  totalQuestions?: number;
   updatedAt?: { toMillis?: () => number };
 };
+
+type Lingua = "ingles" | "espanhol";
 
 const ANO_MIN = 2009;
 const ANO_MAX = 2035; // sondamos até não achar mais
@@ -50,6 +53,8 @@ export default function ProvasPageClient() {
   const [err, setErr] = useState("");
   const [rows, setRows] = useState<YearRow[]>([]);
   const [creating, setCreating] = useState<number | null>(null);
+  // ano cuja prova está esperando o aluno escolher a língua estrangeira
+  const [escolhendoLingua, setEscolhendoLingua] = useState<number | null>(null);
   const plano = usePlano();
   const [limiteSemanalAtingido, setLimiteSemanalAtingido] = useState(false);
 
@@ -73,7 +78,9 @@ export default function ProvasPageClient() {
       const abertas = new Map<number, { id: string; respondidas: number; atualizada: number }>();
       sessSnap.docs.forEach((d) => {
         const sd = d.data() as SessionLike;
-        if (sd.kind === "prova_oficial" && sd.status !== "completed") {
+        // provas antigas montadas com a reaplicação junto (>200 questões) não
+        // entram no "Continuar": a prova certa tem 180 + 5 da língua escolhida
+        if (sd.kind === "prova_oficial" && sd.status !== "completed" && Number(sd.totalQuestions ?? 0) <= 200) {
           const ano = Number((sd.filters?.anos ?? [])[0]);
           if (ano) {
             const respondidas = Number(sd.answeredCount ?? 0);
@@ -101,11 +108,20 @@ export default function ProvasPageClient() {
       const counts = await Promise.all(
         Array.from({ length: ANO_MAX - ANO_MIN + 1 }, (_, i) => ANO_MIN + i).map(async (year) => {
           try {
-            // só ativas: anuladas e provas ainda em revisão não entram na contagem
-            const c = await getCountFromServer(
-              query(collection(db, "questionsBank"), where("examYear", "==", year), where("isActive", "==", true))
-            );
-            return { year, total: c.data().count };
+            // só ativas, sem a reaplicação (PPL) e com UMA língua estrangeira:
+            // é a prova que o aluno faz de fato (180 + 5 da língua escolhida)
+            const base = [where("examYear", "==", year), where("isActive", "==", true)] as const;
+            const ppl = where("aplicacao", "==", "reaplicacao-ppl");
+            const esp = where("enemLanguage", "==", "espanhol");
+            const [todas, nPpl, nEsp, nEspPpl] = await Promise.all([
+              getCountFromServer(query(collection(db, "questionsBank"), ...base)),
+              getCountFromServer(query(collection(db, "questionsBank"), ...base, ppl)),
+              getCountFromServer(query(collection(db, "questionsBank"), ...base, esp)),
+              getCountFromServer(query(collection(db, "questionsBank"), ...base, esp, ppl)),
+            ]);
+            // espanhol da prova regular = espanhol total − espanhol da reaplicação
+            const espRegular = nEsp.data().count - nEspPpl.data().count;
+            return { year, total: todas.data().count - nPpl.data().count - espRegular };
           } catch {
             return { year, total: 0 };
           }
@@ -139,7 +155,8 @@ export default function ProvasPageClient() {
 
   const totalDisponiveis = useMemo(() => rows.reduce((a, r) => a + r.total, 0), [rows]);
 
-  async function resolverProva(year: number) {
+  async function resolverProva(year: number, lingua: Lingua) {
+    setEscolhendoLingua(null);
     const u = auth.currentUser;
     if (!u || creating != null) return;
     setCreating(year);
@@ -153,9 +170,15 @@ export default function ProvasPageClient() {
       const qSnap = await getDocs(
         query(collection(db, "questionsBank"), where("examYear", "==", year))
       );
+      // A prova de verdade: sem a reaplicação (PPL, ids ENEM{ano}R_ e
+      // aplicacao "reaplicacao-ppl", que têm o mesmo examYear) e só com a
+      // língua escolhida. Antes vinham 358–366 questões em 2020/22/23/24 e as
+      // duas línguas em todos os anos.
       const questions = qSnap.docs
-        .map((d) => ({ id: d.id, ...(d.data() as { isActive?: boolean; enemIndex?: number }) }))
+        .map((d) => ({ id: d.id, ...(d.data() as { isActive?: boolean; enemIndex?: number; aplicacao?: string; enemLanguage?: string | null }) }))
         .filter((q) => q.isActive !== false)
+        .filter((q) => q.aplicacao !== "reaplicacao-ppl" && !/^ENEM\d{4}R_/.test(q.id))
+        .filter((q) => !q.enemLanguage || q.enemLanguage === lingua)
         .sort((a, b) => (a.enemIndex ?? 0) - (b.enemIndex ?? 0));
       const questionIds = questions.map((q) => q.id);
       if (!questionIds.length) return;
@@ -164,11 +187,12 @@ export default function ProvasPageClient() {
       const batch = writeBatch(db);
       batch.set(ref, {
         title: `Prova completa • ENEM ${year}`,
-        titleDisplay: `Prova completa · ENEM ${year}`,
+        titleDisplay: `Prova completa · ENEM ${year} · ${lingua === "ingles" ? "Inglês" : "Espanhol"}`,
         kind: "prova_oficial",
         status: "in_progress",
         filters: {
           anos: [String(year)],
+          lingua,
           areas: [],
           assuntos: [],
           provas: [`ENEM ${year}`],
@@ -297,7 +321,29 @@ export default function ProvasPageClient() {
               </div>
 
               <div className="flex shrink-0 items-center gap-3">
-                {r.abertaId ? (
+                {escolhendoLingua === r.year ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-[11px] font-semibold text-vinke-ink3">Língua estrangeira:</span>
+                    {(["ingles", "espanhol"] as const).map((l) => (
+                      <button
+                        key={l}
+                        type="button"
+                        onClick={() => void resolverProva(r.year, l)}
+                        disabled={creating != null}
+                        className="rounded-[8px] bg-vinke px-3 py-2 text-[11px] font-bold text-white transition hover:bg-vinke-deep disabled:opacity-60"
+                      >
+                        {isCreating ? "Preparando…" : l === "ingles" ? "Inglês" : "Espanhol"}
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => setEscolhendoLingua(null)}
+                      className="text-[11px] font-bold text-vinke-ink3 hover:underline"
+                    >
+                      cancelar
+                    </button>
+                  </div>
+                ) : r.abertaId ? (
                   <>
                     <button
                       type="button"
@@ -309,7 +355,7 @@ export default function ProvasPageClient() {
                     <button
                       type="button"
                       onClick={() => {
-                        if (window.confirm("Começar a prova do zero? A tentativa atual continua salva no seu histórico.")) void resolverProva(r.year);
+                        if (window.confirm("Começar a prova do zero? A tentativa atual continua salva no seu histórico.")) setEscolhendoLingua(r.year);
                       }}
                       disabled={creating != null}
                       className="text-[11px] font-bold text-vinke-ink3 underline-offset-2 hover:underline disabled:opacity-60"
@@ -320,7 +366,7 @@ export default function ProvasPageClient() {
                 ) : (
                   <button
                     type="button"
-                    onClick={() => void resolverProva(r.year)}
+                    onClick={() => setEscolhendoLingua(r.year)}
                     disabled={creating != null}
                     className={cn(
                       "rounded-[8px] px-3.5 py-2 text-[11px] font-bold transition disabled:opacity-60",

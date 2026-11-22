@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { lerHoje } from "@/lib/study-tracking";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { collection, doc, getDoc, getDocs, serverTimestamp, setDoc } from "firebase/firestore";
@@ -473,8 +474,8 @@ function PerfilStats() {
         setRespondidas(sessions.reduce((a, x) => a + Number(x.answeredCount ?? 0), 0));
         setSimulados(sessions.filter((x) => x.status === "completed").length);
         if (statsSnap.exists()) {
-          const st = statsSnap.data() as { streakCount?: number; bestStreak?: number };
-          setStreak(Number(st.bestStreak ?? st.streakCount ?? 0));
+          // "Melhor sequência": longestStreak (o campo bestStreak nunca existiu)
+          setStreak(lerHoje(statsSnap.data() as Record<string, unknown>).melhorSequencia);
         }
         // evolução: acerto médio por mês (últimos 6 meses com dados)
         const porMes = new Map<string, { r: number; c: number }>();

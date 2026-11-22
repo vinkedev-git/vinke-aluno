@@ -220,10 +220,14 @@ export default function AlunoGuard({ children }: { children: React.ReactNode }) 
         const validUntil = toDate(ent?.validUntil || ent?.dueDate || ent?.contractDueDate);
         const expired = validUntil ? validUntil < startOfToday() : false;
 
-        // ✅ Se não tem entitlement / inativo / expirado, manda para assinatura
-        if (!isAllowedRoute && (!ent || !active || expired)) {
-          const reason = !ent ? "no_entitlement" : !active ? "inactive" : "expired";
-          router.replace(`/aluno/assinatura?reason=${reason}`);
+        // Só quem NÃO TEM plano nenhum vai para Assinatura. Plano pago vencido
+        // ou inativo continua usando como grátis (usePlano trata assim e o cron
+        // do admin rebaixa para "gratuito"): antes o aluno ficava preso num
+        // loop na tela Assinatura, sem botão de renovar.
+        void active;
+        void expired;
+        if (!isAllowedRoute && !ent) {
+          router.replace(`/aluno/assinatura?reason=no_entitlement`);
           return;
         }
 

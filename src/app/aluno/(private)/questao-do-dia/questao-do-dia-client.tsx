@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { lerHoje } from "@/lib/study-tracking";
 import { shuffledOptions, optionLabel } from "@/lib/shuffledOptions";
 import { useRouter } from "next/navigation";
 import { auth, db } from "@/lib/firebase";
@@ -109,7 +110,7 @@ export default function QuestaoDoDiaClient() {
       try {
         const statsSnap = await getDoc(doc(db, "users", u.uid, "meta", "stats"));
         if (statsSnap.exists()) {
-          setStreak(Number((statsSnap.data() as { streakCount?: number }).streakCount ?? 0));
+          setStreak(lerHoje(statsSnap.data() as Record<string, unknown>).sequencia);
         }
       } catch { /* streak é decorativo */ }
       if (res.answered) {

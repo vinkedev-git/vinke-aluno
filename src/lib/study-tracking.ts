@@ -50,6 +50,28 @@ function yesterdayKey(): string {
   return dayKey(new Date(Date.now() - 24 * 60 * 60 * 1000));
 }
 
+/**
+ * Leitura dos contadores do DIA a partir de users/{uid}/meta/stats.
+ * todayAnswered/todayCorrect/todayFlashcards só são de hoje se a chave do dia
+ * bater — sem isso o Início mostrava de manhã os números de ontem.
+ * A sequência só está viva se a última resposta foi hoje ou ontem; senão é 0
+ * (antes aparecia "12 dias" e virava 1 quando o aluno respondia).
+ */
+export function lerHoje(stats: Record<string, unknown> | null | undefined) {
+  const s = stats ?? {};
+  const hoje = dayKey();
+  const ehHoje = safeStr(s.todayKey) === hoje;
+  const ultimo = safeStr(s.streakLastDay);
+  const viva = ultimo === hoje || ultimo === yesterdayKey();
+  return {
+    questoes: ehHoje ? Number(s.todayAnswered ?? 0) || 0 : 0,
+    certas: ehHoje ? Number(s.todayCorrect ?? 0) || 0 : 0,
+    flashcards: safeStr(s.todayFlashcardsKey) === hoje ? Number(s.todayFlashcards ?? 0) || 0 : 0,
+    sequencia: viva ? Number(s.streakCount ?? 0) || 0 : 0,
+    melhorSequencia: Math.max(Number(s.longestStreak ?? 0) || 0, viva ? Number(s.streakCount ?? 0) || 0 : 0),
+  };
+}
+
 /** Incrementa o contador de flashcards estudados hoje nas stats. */
 export async function recordFlashcardSession(uid: string, count: number): Promise<void> {
   if (!uid || count <= 0) return;

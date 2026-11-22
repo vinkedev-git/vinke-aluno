@@ -384,6 +384,10 @@ export default function QuizClient({ sessionId }: { sessionId: string }) {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFinishing, setIsFinishing] = useState(false);
+  // Falha numa AÇÃO (confirmar/finalizar) não derruba a tela: aparece como
+  // aviso no card e o aluno tenta de novo sem perder a alternativa marcada.
+  // (Antes usava o mesmo `err` do carregamento e o player inteiro sumia.)
+  const [acaoErro, setAcaoErro] = useState("");
 
   // Plano gratuito: 10 questões respondidas por dia
   const plano = usePlano();
@@ -595,14 +599,18 @@ export default function QuizClient({ sessionId }: { sessionId: string }) {
       setQuestions(ordered);
 
       const idx = Number(sess.currentIndex ?? 0) || 0;
-      const nextIndex =
-        sess.status === "completed"
+      // ?q=N abre direto na questão N (0-based): "Ver resolução" do resultado.
+      const qUrl = Number(new URLSearchParams(window.location.search).get("q"));
+      const temQ = Number.isInteger(qUrl) && qUrl >= 0 && qUrl < ordered.length;
+      const nextIndex = temQ
+        ? qUrl
+        : sess.status === "completed"
           ? 0
           : Math.min(Math.max(0, idx), Math.max(0, ordered.length - 1));
 
       setCurrentIndex(nextIndex);
 
-      if (sess.status === "completed" && idx !== 0) {
+      if (sess.status === "completed" && idx !== 0 && !temQ) {
         await updateDoc(sessionRef, {
           currentIndex: 0,
           updatedAt: serverTimestamp(),
@@ -665,6 +673,7 @@ export default function QuizClient({ sessionId }: { sessionId: string }) {
   async function onConfirm() {
     if (!session || !currentQuestion || !selectedOptionId || isReviewMode) return;
     if (limiteDiarioAtingido) return;
+    setAcaoErro("");
 
     const u = auth.currentUser;
     if (!u) return;
@@ -788,7 +797,7 @@ export default function QuizClient({ sessionId }: { sessionId: string }) {
         setLimiteForcado(true);
       } else {
         registrarErro("simulado-responder", e, { sessionId, questao: currentQuestion?.id ?? null });
-        setErr("Não foi possível confirmar sua resposta.");
+        setAcaoErro("Não foi possível confirmar sua resposta. Confira sua conexão e toque em Confirmar de novo.");
       }
     } finally {
       setIsSubmitting(false);
@@ -824,6 +833,26 @@ export default function QuizClient({ sessionId }: { sessionId: string }) {
   }
 
   async function onFinish() {
+    setAcaoErro("");
+    {
+      const ids = normalizeIdList(session?.questionIds);
+      const respondidas = new Set(
+        Object.entries(session?.answersMap ?? {})
+          .filter(([, v]) => v && typeof v === "object" && safeStr((v as AnswerMapItem).selectedOptionId))
+          .map(([k]) => k)
+      );
+      const emBranco = ids.filter((id) => !respondidas.has(id));
+      if (emBranco.length > 0) {
+        const ok = window.confirm(
+          `Você deixou ${emBranco.length} ${emBranco.length === 1 ? "questão" : "questões"} em branco. Depois de finalizar, não dá mais para responder. Finalizar mesmo assim?\n\n(Cancelar leva você à primeira em branco.)`
+        );
+        if (!ok) {
+          const primeira = ids.indexOf(emBranco[0]);
+          if (primeira >= 0) jumpTo(primeira);
+          return;
+        }
+      }
+    }
     const u = auth.currentUser;
     if (!u || !session) return;
 
@@ -839,7 +868,7 @@ export default function QuizClient({ sessionId }: { sessionId: string }) {
     } catch (e) {
       console.error(e);
       registrarErro("simulado-finalizar", e, { sessionId });
-      setErr("Não foi possível finalizar o simulado.");
+      setAcaoErro("Não foi possível finalizar agora. Confira sua conexão e tente de novo.");
     } finally {
       setIsFinishing(false);
     }
@@ -916,8 +945,14 @@ export default function QuizClient({ sessionId }: { sessionId: string }) {
 
   if (!session || !currentQuestion) return null;
 
-  const canFinalize = !isReviewMode && isLast;
-  const finalizeDisabled = !confirmed || isSubmitting || isFinishing;
+  const questionIdsAll = normalizeIdList(session.questionIds);
+  const todasRespondidas =
+    questionIdsAll.length > 0 &&
+    questionIdsAll.every((id) => safeStr((session.answersMap?.[id] as AnswerMapItem | undefined)?.selectedOptionId));
+  // Finalizar aparece na última questão OU quando já respondeu todas (antes,
+  // quem respondia a última que faltava fora do fim nunca via o resultado).
+  const canFinalize = !isReviewMode && (isLast || todasRespondidas);
+  const finalizeDisabled = isSubmitting || isFinishing;
   const hasSavedAnswer = !!currentSavedAnswer && !!safeStr(currentSavedAnswer.selectedOptionId);
   const showResultPanel = confirmed || isReviewMode;
   const progressPct = totalFromSession > 0 ? Math.round(((currentIndex + 1) / totalFromSession) * 100) : 0;
@@ -1178,6 +1213,12 @@ export default function QuizClient({ sessionId }: { sessionId: string }) {
 
           {/* Navegação */}
           <div className="border-t border-vinke-line2 px-6 py-4 dark:border-vinke-navy-line">
+            {acaoErro ? (
+              <div role="alert" className="mb-3 flex items-start justify-between gap-3 rounded-[9px] bg-vinke-red-soft px-3 py-2.5 text-xs font-semibold text-vinke-red dark:bg-vinke-red/10 dark:text-vinke-red-dark">
+                <span>{acaoErro}</span>
+                <button type="button" onClick={() => setAcaoErro("")} aria-label="Fechar aviso" className="shrink-0 font-bold">×</button>
+              </div>
+            ) : null}
             <div className="flex items-center gap-3">
               <button
                 type="button"
@@ -1213,9 +1254,9 @@ export default function QuizClient({ sessionId }: { sessionId: string }) {
                   type="button"
                   className="flex flex-1 items-center justify-center gap-2 rounded-[9px] bg-vinke-navy px-4 py-3 text-sm font-bold text-white transition hover:opacity-90 disabled:opacity-40 dark:bg-white dark:text-vinke-navy"
                   onClick={onNext}
-                  disabled={isReviewMode ? isLast : !confirmed || isLast}
+                  disabled={isLast}
                 >
-                  Próxima
+                  {!isReviewMode && !confirmed ? "Pular" : "Próxima"}
                   <ChevronRight size={16} aria-hidden="true" />
                 </button>
               )}

@@ -267,17 +267,10 @@ export default function ResultadoClient({ sessionId }: { sessionId: string }) {
     return rows;
   }, [rows, filtro]);
 
-  async function verResolucao(rowIndex: number) {
-    const u = auth.currentUser;
-    if (!u) return;
-    try {
-      await updateDoc(doc(db, "users", u.uid, "sessions", sessionId), {
-        currentIndex: rowIndex - 1,
-      });
-    } catch {
-      /* segue mesmo sem persistir */
-    }
-    router.push(`/aluno/simulados/${sessionId}`);
+  // Abre o player direto na questão (?q=índice). Antes gravava currentIndex,
+  // mas sessão concluída sempre reabria na 1ª questão.
+  function verResolucao(rowIndex: number) {
+    router.push(`/aluno/simulados/${sessionId}?q=${rowIndex - 1}`);
   }
 
   async function refazerErros() {
@@ -361,7 +354,7 @@ export default function ResultadoClient({ sessionId }: { sessionId: string }) {
           <div>
             <span className="text-[10px] font-bold tracking-[0.14em] text-vinke dark:text-vinke-lav">SEU DIAGNÓSTICO</span>
             <h2 className="mt-1 font-display text-xl font-bold text-vinke-ink dark:text-white">
-              {stats.blank > 0
+              {stats.blank > 0 && session?.status !== "completed"
                 ? `Faltam ${stats.blank} ${stats.blank === 1 ? "questão" : "questões"} para fechar o diagnóstico`
                 : piorArea
                   ? `Comece por ${piorArea.nome}: é onde você tem mais pontos para ganhar.`
@@ -389,7 +382,7 @@ export default function ResultadoClient({ sessionId }: { sessionId: string }) {
             Com 10 questões, isso é um ponto de partida, não uma nota. Cada questão que você responder daqui em diante deixa o retrato mais preciso, e os erros vão para o caderno.
           </p>
           <div className="flex flex-col gap-2 sm:flex-row">
-            {stats.blank > 0 ? (
+            {stats.blank > 0 && session?.status !== "completed" ? (
               <Link href={`/aluno/simulados/${sessionId}`} className="rounded-[10px] bg-vinke px-5 py-3 text-center text-sm font-bold text-white">
                 Continuar o diagnóstico
               </Link>
@@ -580,7 +573,7 @@ export default function ResultadoClient({ sessionId }: { sessionId: string }) {
                 onClick={() => void verResolucao(r.index)}
                 className="text-right text-[11px] font-bold text-vinke dark:text-vinke-lav"
               >
-                {r.status === "blank" ? "Responder" : "Ver resolução"}
+                {r.status === "blank" ? "Ver questão" : "Ver resolução"}
               </button>
             </div>
           ))

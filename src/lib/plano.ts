@@ -163,11 +163,19 @@ export function usePlano(): PlanoInfo {
       unsubEnt = onSnapshot(
         doc(db, "entitlements", user.uid),
         (snap) => {
-          const data = snap.exists() ? (snap.data() as { plan?: unknown }) : null;
+          const data = snap.exists() ? (snap.data() as { plan?: unknown; active?: unknown; validUntil?: unknown }) : null;
+          // Plano pago vencido ou inativo vale como grátis (o aluno continua
+          // usando; o cron do admin rebaixa no banco).
+          const venceu = (() => {
+            const v = data?.validUntil as { toMillis?: () => number } | string | number | null | undefined;
+            const ms = typeof v === "object" && v?.toMillis ? v.toMillis() : v ? new Date(v as string | number).getTime() : NaN;
+            return Number.isFinite(ms) && ms < Date.now();
+          })();
+          const comoGratis = isPlanoGratuito(data) || data?.active === false || venceu;
           setInfo({
             carregando: false,
-            gratuito: isPlanoGratuito(data) && !vinkeAbertoAtivo(),
-            aberto: isPlanoGratuito(data) && vinkeAbertoAtivo(),
+            gratuito: comoGratis && !vinkeAbertoAtivo(),
+            aberto: comoGratis && vinkeAbertoAtivo(),
             plan: String(data?.plan ?? ""),
           });
         },

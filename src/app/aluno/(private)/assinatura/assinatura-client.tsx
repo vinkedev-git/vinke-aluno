@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { doc, getDoc, Timestamp } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
+import { CHECKOUT, checkoutUrl, fundadorAtivo } from "@/lib/oferta-client";
 
 type Entitlement = {
   uid?: string;
@@ -96,8 +97,8 @@ function statusLabel(params: { ent: Entitlement | null; expired: boolean }) {
 
 function reasonBannerText(reason: string | null) {
   if (!reason) return "";
-  if (reason === "expired") return "Seu acesso expirou. Renove para continuar usando.";
-  if (reason === "inactive") return "Seu acesso está inativo no momento.";
+  if (reason === "expired") return "Seu plano venceu. Você continua usando o Vinke no plano grátis; renove para voltar a ter tudo liberado.";
+  if (reason === "inactive") return "Seu plano pago está inativo. Você continua usando o Vinke no plano grátis.";
   if (reason === "no_entitlement") return "Nenhuma assinatura ativa foi encontrada para seu usuário.";
   return "";
 }
@@ -161,7 +162,7 @@ export default function AssinaturaClient() {
     if (!validUntilDate) return null;
     if (remainingDays === null) return null;
 
-    if (remainingDays < 0) return { tone: "danger", text: "Sua assinatura expirou. Renove para continuar usando." };
+    if (remainingDays < 0) return { tone: "danger", text: "Sua assinatura venceu. Você segue no plano grátis; use Renovar para voltar a ter tudo liberado." };
     if (remainingDays === 0) return { tone: "warning", text: "Sua assinatura vence hoje." };
     if (remainingDays <= 7) return { tone: "warning", text: `Sua assinatura vence em ${remainingDays} dias.` };
 
@@ -271,14 +272,27 @@ export default function AssinaturaClient() {
                   {/* Card sempre navy: cores claras fixas, sem tokens de tinta do tema */}
                   <div className="text-[10px] font-semibold tracking-[0.12em] text-slate-400">SEU PLANO</div>
                   <div className="mt-1 truncate font-display text-xl font-bold text-white">{planName}</div>
-                  {ent?.plan === "gratuito" && (
-                    <button
-                      type="button"
-                      onClick={() => router.push("/aluno/planos")}
-                      className="mt-3 rounded-[10px] bg-white px-4 py-2 text-sm font-bold text-vinke-navy transition hover:bg-white/90"
-                    >
-                      Ver planos
-                    </button>
+                  {(ent?.plan === "gratuito" || expired || ent?.active === false) && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {ent?.plan !== "gratuito" && (
+                        <a
+                          href={checkoutUrl(
+                            ent?.plan === "mensal" ? CHECKOUT.mensal : fundadorAtivo() ? CHECKOUT.fundador : CHECKOUT.anual,
+                            { email: ent?.email || user?.email, nome: user?.displayName, origem: "assinatura-renovar" }
+                          )}
+                          className="rounded-[10px] bg-vinke px-4 py-2 text-sm font-bold text-white transition hover:bg-vinke-deep"
+                        >
+                          Renovar meu plano
+                        </a>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => router.push("/aluno/planos")}
+                        className="rounded-[10px] bg-white px-4 py-2 text-sm font-bold text-vinke-navy transition hover:bg-white/90"
+                      >
+                        Ver planos
+                      </button>
+                    </div>
                   )}
                   <div className="mt-2 text-sm text-slate-300">
                     E-mail:{" "}

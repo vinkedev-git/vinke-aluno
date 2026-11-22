@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { getDailyStatus } from "@/lib/daily";
 import { getFlashcardOverview } from "@/lib/flashcards/stats";
+import { registrarErro } from "@/lib/telemetria";
 import { dayKey } from "@/lib/study-tracking";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -94,12 +95,16 @@ export default function EstudoDeHojeClient() {
 
   const [loading, setLoading] = useState(true);
   const [plan, setPlan] = useState<PlanData | null>(null);
+  // Falha de carregamento: antes, sem catch, plan ficava null, blocks vazio e
+  // "0 de 0 blocos" virava "Dia completo!" — o aluno ia embora sem estudar.
+  const [falhou, setFalhou] = useState(false);
   const [creating, setCreating] = useState(false);
 
   const load = useCallback(async () => {
     const u = auth.currentUser;
     if (!u) { setLoading(false); return; }
     setLoading(true);
+    setFalhou(false);
 
     try {
       const [statsSnap, settingsSnap, fcOverview, errorSnap, dailyStatus] = await Promise.all([
@@ -181,6 +186,10 @@ export default function EstudoDeHojeClient() {
         errorsToday,
         dailyAnswered: dailyStatus?.answered ?? false,
       });
+    } catch (e) {
+      console.error(e);
+      registrarErro("estudo-de-hoje-carregar", e);
+      setFalhou(true);
     } finally {
       setLoading(false);
     }
@@ -268,7 +277,8 @@ export default function EstudoDeHojeClient() {
     [blocks]
   );
   const doneCount = useMemo(() => blocks.filter((b) => b.done).length, [blocks]);
-  const allDone = doneCount === blocks.length;
+  // só está "tudo feito" se o plano carregou e tem blocos
+  const allDone = plan !== null && blocks.length > 0 && doneCount === blocks.length;
   const firstPending = useMemo(() => blocks.find((b) => !b.done), [blocks]);
 
   async function startBlock(block: StudyBlock) {
@@ -349,6 +359,16 @@ export default function EstudoDeHojeClient() {
         <div className="h-8 w-56 animate-pulse rounded-2xl bg-vinke-line2 dark:bg-vinke-navy-sel" />
         <div className="h-24 animate-pulse rounded-2xl bg-vinke-line2 dark:bg-vinke-navy-sel" />
         {[...Array(4)].map((_, i) => <SkeletonCard key={i} lines={2} />)}
+      </div>
+    );
+  }
+
+  if (falhou || !plan) {
+    return (
+      <div className="mx-auto flex max-w-[520px] flex-col items-center gap-3 rounded-2xl bg-white p-8 text-center dark:bg-vinke-navy-card">
+        <div className="font-display text-lg font-bold text-vinke-ink dark:text-white">Não deu para montar seu plano agora</div>
+        <p className="text-sm leading-6 text-vinke-ink3">Pode ser a conexão. Seu progresso está salvo: é só tentar de novo.</p>
+        <Button onClick={() => void load()}>Tentar de novo</Button>
       </div>
     );
   }
