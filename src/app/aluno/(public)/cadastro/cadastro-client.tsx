@@ -189,6 +189,16 @@ export default function CadastroClient() {
               {uiError ? (
                 <div className="rounded-2xl bg-vinke-red-soft px-4 py-3 text-sm text-vinke-red dark:bg-vinke-red/10 dark:text-vinke-red-dark">
                   {uiError}
+                  {/já tem uma conta/i.test(uiError) ? (
+                    <div className="mt-2 flex flex-wrap gap-3 text-xs font-bold">
+                      <a href={`/aluno/entrar?email=${encodeURIComponent(email.trim().toLowerCase())}`} className="underline">
+                        Entrar
+                      </a>
+                      <a href={`/aluno/criar-senha?email=${encodeURIComponent(email.trim().toLowerCase())}`} className="underline">
+                        Criar ou recuperar senha
+                      </a>
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
 

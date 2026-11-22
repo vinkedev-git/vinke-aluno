@@ -36,7 +36,18 @@ export default function CriarSenhaClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: eMail, primeiroAcesso: true }),
       });
-      if (!res.ok) throw new Error();
+      const data = (await res.json().catch(() => ({}))) as { ok?: boolean; encontrado?: boolean; limite?: boolean; error?: string };
+      if (!res.ok || data.ok === false) throw new Error(data.error || "");
+      if (data.encontrado === false) {
+        setErro(
+          "Não encontramos uma conta com esse e-mail. Confira se é o mesmo e-mail usado na compra. Se você pagou com Pix ou boleto agora há pouco, a liberação pode levar alguns minutos."
+        );
+        return;
+      }
+      if (data.limite) {
+        setErro("Você já pediu o link há pouco. Confira sua caixa de entrada e o spam, e tente de novo em 1 minuto.");
+        return;
+      }
       setEnviado(true);
     } catch {
       setErro("Não foi possível enviar agora. Tente de novo em instantes.");

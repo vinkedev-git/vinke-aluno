@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { registrarErro } from "@/lib/telemetria";
+import { abrirRevisao } from "@/lib/revisao";
 import { useRouter } from "next/navigation";
 import { auth, db } from "@/lib/firebase";
 import {
@@ -212,30 +214,18 @@ export default function CadernoClient() {
 
     setCreating(true);
     try {
-      const ref = await addDoc(collection(db, "users", u.uid, "sessions"), {
+      const id = await abrirRevisao(u.uid, {
+        origem: `caderno:${selectedTema || "todos"}`,
+        questionIds,
         title: "Revisão de erros",
         titleDisplay: "Revisão de erros",
-        kind: "error_review",
-        status: "in_progress",
-        filters: {
-          provas: [],
-          provaIds: [],
-          niveis: [],
-          temas: selectedTema ? [selectedTema] : [],
-        },
-        questionIds,
-        totalQuestions: questionIds.length,
-        currentIndex: 0,
-        answeredCount: 0,
-        correctCount: 0,
-        wrongCount: 0,
-        scorePercent: 0,
-        updatedAt: serverTimestamp(),
-        createdAt: serverTimestamp(),
+        temas: selectedTema ? [selectedTema] : [],
       });
-      router.push(`/aluno/simulados/${ref.id}`);
+      router.push(`/aluno/simulados/${id}`);
     } catch (e) {
       console.error(e);
+      registrarErro("revisao-abrir", e, { origem: "caderno" });
+      window.alert("Não foi possível abrir a revisão agora. Confira sua conexão e tente de novo.");
       setCreating(false);
     }
   }
@@ -244,25 +234,18 @@ export default function CadernoClient() {
     if (!u || creating || !item.questionId) return;
     setCreating(true);
     try {
-      const ref = await addDoc(collection(db, "users", u.uid, "sessions"), {
+      const id = await abrirRevisao(u.uid, {
+        origem: `caderno-uma:${item.questionId}`,
+        questionIds: [item.questionId],
         title: "Refazer erro",
         titleDisplay: "Refazer erro",
-        kind: "error_review",
-        status: "in_progress",
-        filters: { provas: [], provaIds: [], niveis: [], temas: item.temas ?? [] },
-        questionIds: [item.questionId],
-        totalQuestions: 1,
-        currentIndex: 0,
-        answeredCount: 0,
-        correctCount: 0,
-        wrongCount: 0,
-        scorePercent: 0,
-        updatedAt: serverTimestamp(),
-        createdAt: serverTimestamp(),
+        temas: item.temas ?? [],
       });
-      router.push(`/aluno/simulados/${ref.id}`);
+      router.push(`/aluno/simulados/${id}`);
     } catch (e) {
       console.error(e);
+      registrarErro("revisao-abrir", e, { origem: "caderno-uma" });
+      window.alert("Não foi possível abrir este erro agora. Confira sua conexão e tente de novo.");
       setCreating(false);
     }
   }

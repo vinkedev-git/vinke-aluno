@@ -1,6 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { letraExibida } from "@/lib/shuffledOptions";
+import { registrarErro } from "@/lib/telemetria";
+import { abrirRevisao } from "@/lib/revisao";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { auth, db } from "@/lib/firebase";
@@ -158,7 +161,8 @@ export default function ResultadoClient({ sessionId }: { sessionId: string }) {
         )
         .sort((a, b) => toMillis(b.createdAt) - toMillis(a.createdAt))
         .slice(0, 2)
-        .map((s) => Math.round(safeNum(s.scorePercent)))
+        // mesma conta do hero (acertos/respondidas) para a comparação ser justa
+        .map((s) => (safeNum(s.answeredCount) > 0 ? Math.round((safeNum(s.correctCount) / safeNum(s.answeredCount)) * 100) : 0))
         .reverse();
       setPreviousScores(prev);
 
@@ -172,6 +176,7 @@ export default function ResultadoClient({ sessionId }: { sessionId: string }) {
           let assunto = "";
           let area = "";
           let correct = "";
+          let optionIds: string[] = [];
           try {
             const qSnap = await getDoc(doc(db, "questionsBank", qid));
             if (qSnap.exists()) {
@@ -181,6 +186,9 @@ export default function ResultadoClient({ sessionId }: { sessionId: string }) {
               assunto = String(assuntos[0] ?? q.disciplina ?? q.area ?? "").trim();
               correct = String(q.correctOptionId ?? "").trim();
               area = String(q.areaId ?? "").trim();
+              optionIds = Array.isArray(q.options)
+                ? (q.options as Array<{ id?: unknown }>).map((o) => String(o?.id ?? "").trim()).filter(Boolean)
+                : [];
             }
           } catch {
             /* ignora questão que falhou */
@@ -192,7 +200,13 @@ export default function ResultadoClient({ sessionId }: { sessionId: string }) {
             : ans?.isCorrect
               ? "correct"
               : "wrong";
-          return { id: qid, index: i + 1, snippet, assunto, area, selected, correct, status };
+          // Letras como o aluno VIU no player (alternativas embaralhadas por sessão)
+          const semente = `${sessionId}:${qid}`;
+          return {
+            id: qid, index: i + 1, snippet, assunto, area, status,
+            selected: optionIds.length ? letraExibida(optionIds, selected, semente) : selected,
+            correct: optionIds.length ? letraExibida(optionIds, correct, semente) : correct,
+          };
         })
       );
       setRows(docs);
@@ -280,27 +294,22 @@ export default function ResultadoClient({ sessionId }: { sessionId: string }) {
     if (!wrongIds.length) return;
     setCreating(true);
     try {
-      const ref = await addDoc(collection(db, "users", u.uid, "sessions"), {
-        title: `Refazer erros · Simulado`,
-        titleDisplay: "Refazer erros",
-        kind: "error_review",
-        status: "in_progress",
-        filters: { temas: [] },
+      const id = await abrirRevisao(u.uid, {
+        origem: `resultado:${sessionId}`,
         questionIds: wrongIds,
-        totalQuestions: wrongIds.length,
-        currentIndex: 0,
-        answeredCount: 0,
-        correctCount: 0,
-        wrongCount: 0,
-        scorePercent: 0,
-        updatedAt: serverTimestamp(),
-        createdAt: serverTimestamp(),
+        title: "Refazer erros · Simulado",
+        titleDisplay: "Refazer erros",
       });
-      router.push(`/aluno/simulados/${ref.id}`);
+      router.push(`/aluno/simulados/${id}`);
+    } catch (e) {
+      console.error(e);
+      registrarErro("revisao-abrir", e, { origem: "resultado" });
+      window.alert("Não foi possível abrir a revisão agora. Confira sua conexão e tente de novo.");
     } finally {
       setCreating(false);
     }
   }
+
 
   if (loading) {
     return (

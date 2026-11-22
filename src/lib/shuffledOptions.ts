@@ -43,3 +43,26 @@ export function shuffledOptions<T>(options: T[], seedKey: string): T[] {
 export function optionLabel(index: number): string {
   return "ABCDEFGH"[index] ?? String(index + 1);
 }
+
+/**
+ * Letra que o aluno VIU para uma alternativa: mesma ordenação por id do player
+ * (A–E primeiro, depois números) e mesmo embaralhamento (`${sessionId}:${qid}`).
+ * O resultado mostrava o id original do caderno ("Você: E · Certa: A") quando
+ * no player o aluno tinha marcado a B.
+ */
+export function letraExibida(optionIds: string[], alvo: string, seedKey: string): string {
+  if (!alvo) return "";
+  const rank = (id: string) => {
+    const k = id.toUpperCase();
+    const i = ["A", "B", "C", "D", "E"].indexOf(k);
+    if (i >= 0) return i;
+    const n = Number(k);
+    return Number.isFinite(n) ? 100 + n : 999;
+  };
+  const ordenados = [...optionIds].sort(
+    (a, b) => rank(a) - rank(b) || a.localeCompare(b, "pt-BR", { sensitivity: "base" })
+  );
+  const exibidos = optionIds.length > 1 ? shuffledOptions(ordenados, seedKey) : ordenados;
+  const idx = exibidos.findIndex((id) => id === alvo);
+  return idx >= 0 ? optionLabel(idx) : alvo;
+}

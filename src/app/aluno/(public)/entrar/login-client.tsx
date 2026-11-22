@@ -12,7 +12,7 @@ import { VinkeSymbol } from "@/components/VinkeLogo";
 function mapErroToMessage(code: string) {
   switch (code) {
     case "sessao_ativa":
-      return "Sua conta foi acessada em outro dispositivo e esta sessão foi encerrada por segurança.";
+      return "Você entrou na sua conta em outro navegador ou aparelho. Entre de novo para continuar por aqui.";
     case "sem_acesso":
       return "Seu acesso ainda não está ativo. Se você já pagou, aguarde alguns minutos ou fale com o suporte.";
     case "verificacao":
@@ -44,7 +44,8 @@ export default function LoginClient() {
   const erro = searchParams.get("erro") || "";
   const erroMsg = useMemo(() => mapErroToMessage(erro), [erro]);
 
-  const [email, setEmail] = useState("");
+  // o link do e-mail de compra e o cadastro mandam ?email= para não redigitar
+  const [email, setEmail] = useState(() => searchParams.get("email") ?? "");
   const [senha, setSenha] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -268,9 +269,12 @@ export default function LoginClient() {
                 </a>
               </p>
 
-              <div className="rounded-2xl bg-vinke-offwhite px-3 py-2 text-xs text-vinke-ink2 dark:bg-vinke-navy dark:text-slate-300">
-                Dica: se você recebeu o e-mail “Crie sua senha”, você também pode usar “Esqueci minha senha”.
-              </div>
+              <a
+                href={`/aluno/criar-senha${email.trim() ? `?email=${encodeURIComponent(email.trim())}` : ""}`}
+                className="block rounded-2xl bg-vinke-offwhite px-3 py-2.5 text-center text-xs font-semibold text-vinke-ink2 transition hover:bg-vinke-soft dark:bg-vinke-navy dark:text-slate-300"
+              >
+                Comprei um plano e ainda não tenho senha →
+              </a>
             </form>
           </div>
         </div>

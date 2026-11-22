@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "@/lib/firebase";
@@ -139,6 +139,10 @@ export default function EstudarClient() {
     return front;
   }, [current, originalTexts]);
 
+  // Cards já contados na meta do dia nesta sessão (conta cada card uma vez,
+  // no momento em que é respondido — antes só contava ao chegar ao fim).
+  const contadosRef = useRef<Set<string>>(new Set());
+
   const applyAnswer = useCallback(
     async (answer: SrsAnswer) => {
       if (!uid || !current || saving) return;
@@ -178,6 +182,12 @@ export default function EstudarClient() {
         };
 
         await saveProgress(uid, current.card.id, update);
+        if (!contadosRef.current.has(current.card.id)) {
+          contadosRef.current.add(current.card.id);
+          // await: recordFlashcardSession lê e regrava; em paralelo, respostas
+          // rápidas perderiam contagem
+          await recordFlashcardSession(uid, 1);
+        }
 
         setSessionStats((s) => ({
           reviewed: s.reviewed + 1,
@@ -188,8 +198,14 @@ export default function EstudarClient() {
         }));
 
         // Se errou, joga o card novamente no final da fila para revisar hoje
+        // com o estado JÁ atualizado: antes voltava com o progresso antigo e o
+        // acerto seguinte agendava como se o erro não tivesse existido
         if (answer === "again") {
-          setQueue((prev) => [...prev, prev[index]!]);
+          setQueue((prev) => {
+            const item = prev[index]!;
+            const progresso = { ...(item.progress ?? {}), ...update } as UserFlashcardProgressDoc;
+            return [...prev, { ...item, progress: progresso, isNew: false }];
+          });
         }
 
         setIndex((i) => i + 1);
@@ -204,11 +220,8 @@ export default function EstudarClient() {
   useEffect(() => {
     if (isDone && uid && sessionStats.reviewed > 0) {
       void bumpStreakAndReviews(uid, sessionStats.reviewed, sessionStats.newMastered);
-      // bumpStreakAndReviews grava só no doc de flashcards (streak, total).
-      // O "Estudo de hoje" lê users/{uid}/meta/stats.todayFlashcards, que
-      // ninguém escrevia: o contador ficava 0/10 e a tarefa nunca riscava,
-      // por mais cards que o aluno revisasse.
-      void recordFlashcardSession(uid, sessionStats.reviewed);
+      // O contador do dia (meta/stats.todayFlashcards) agora é gravado a cada
+      // card respondido, em applyAnswer — não aqui, para não contar em dobro.
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isDone]);

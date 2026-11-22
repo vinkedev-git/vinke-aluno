@@ -249,10 +249,10 @@ export default function SimuladosPageClient() {
             const answeredRaw = Number(s.answeredCount ?? 0) || 0;
             const answered = total > 0 ? Math.min(answeredRaw, total) : answeredRaw;
             const correct = Number(s.correctCount ?? 0) || 0;
-            const percent =
-              Number.isFinite(s.scorePercent) && s.scorePercent != null
-                ? Math.round(Number(s.scorePercent))
-                : answered > 0 ? Math.round((correct / answered) * 100) : 0;
+            // Acerto entre as RESPONDIDAS — a mesma conta do resultado.
+            // (scorePercent é acertos/total e mostrava "4/5 · 20%" para quem
+            // acertou 4 de 5 num simulado de 20.)
+            const percent = answered > 0 ? Math.round((correct / answered) * 100) : 0;
 
             return (
               <div

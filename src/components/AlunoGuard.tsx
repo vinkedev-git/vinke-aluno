@@ -21,6 +21,7 @@ type TimestampLike = {
 };
 
 type EntitlementDoc = {
+  plan?: string;
   active?: boolean;
   validUntil?: unknown;
   dueDate?: unknown;
@@ -77,6 +78,11 @@ type ActiveSessionData = {
 export default function AlunoGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  // A rota é lida por ref: com `pathname` nas dependências do efeito, cada
+  // troca de tela refazia o login e "tomava posse" da sessão de novo, e o
+  // outro navegador do mesmo aluno (ex.: Instagram × Chrome) caía.
+  const pathnameRef = useRef(pathname);
+  pathnameRef.current = pathname;
   const [loading, setLoading] = useState(true);
   const redirectedRef = useRef(false);
   const heartbeatRef = useRef<number | null>(null);
@@ -209,7 +215,7 @@ export default function AlunoGuard({ children }: { children: React.ReactNode }) 
 
         // ✅ Rotas liberadas mesmo sem assinatura
         const allowWithoutEntitlement = ["/aluno/assinatura", "/aluno/perfil"];
-        const isAllowedRoute = allowWithoutEntitlement.some((p) => pathname?.startsWith(p));
+        const isAllowedRoute = allowWithoutEntitlement.some((p) => pathnameRef.current?.startsWith(p));
 
         const entRef = doc(db, "entitlements", user.uid);
         const entSnap = await getDoc(entRef);
@@ -224,10 +230,21 @@ export default function AlunoGuard({ children }: { children: React.ReactNode }) 
         // ou inativo continua usando como grátis (usePlano trata assim e o cron
         // do admin rebaixa para "gratuito"): antes o aluno ficava preso num
         // loop na tela Assinatura, sem botão de renovar.
-        void active;
-        void expired;
         if (!isAllowedRoute && !ent) {
           router.replace(`/aluno/assinatura?reason=no_entitlement`);
+          return;
+        }
+
+        // Sessão única só para plano PAGO e vigente (é o que impede dividir a
+        // conta). No grátis — quase toda a base — não há o que proteger, e o
+        // aluno que alterna entre o navegador do Instagram e o Chrome era
+        // derrubado com um aviso que parecia invasão.
+        const exigeSessaoUnica = Boolean(ent) && String(ent?.plan ?? "") !== "gratuito" && active && !expired;
+        if (!exigeSessaoUnica) {
+          void sendActivityPing(user.uid);
+          activityIntervalRef.current = window.setInterval(() => {
+            void sendActivityPing(user.uid);
+          }, 60_000);
           return;
         }
 
@@ -341,7 +358,7 @@ export default function AlunoGuard({ children }: { children: React.ReactNode }) 
       clearSessionSync();
       unsub();
     };
-  }, [router, pathname, clearSessionSync, attachSessionMonitor, forceSessionLogout]);
+  }, [router, clearSessionSync, attachSessionMonitor, forceSessionLogout, sendActivityPing]);
 
   if (loading) {
     return (

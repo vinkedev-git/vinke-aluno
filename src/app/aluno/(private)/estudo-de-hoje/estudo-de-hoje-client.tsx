@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { abrirRevisao } from "@/lib/revisao";
 import { useRouter } from "next/navigation";
 import { auth, db } from "@/lib/firebase";
 import {
@@ -319,20 +320,16 @@ export default function EstudoDeHojeClient() {
               .filter(Boolean)
               .slice(0, plan.errorsToday);
 
-            const ref = await addDoc(collection(db, "users", u.uid, "sessions"), {
+            const id = await abrirRevisao(u.uid, {
+              origem: `estudo:${dayKey()}`,
+              questionIds,
               title: "Revisão de erros",
               titleDisplay: "Revisão de erros",
-              kind: "error_review",
-              status: "in_progress",
-              filters: { provas: [], provaIds: [], niveis: [], temas: [] },
-              questionIds,
-              totalQuestions: questionIds.length,
-              currentIndex: 0,
-              answeredCount: 0, correctCount: 0, wrongCount: 0, scorePercent: 0,
-              updatedAt: serverTimestamp(),
-              createdAt: serverTimestamp(),
             });
-            router.push(`/aluno/simulados/${ref.id}`);
+            router.push(`/aluno/simulados/${id}`);
+          } catch (err) {
+            registrarErro("revisao-abrir", err, { origem: "estudo" });
+            window.alert("Não foi possível abrir a revisão agora. Confira sua conexão e tente de novo.");
           } finally {
             setCreating(false);
           }

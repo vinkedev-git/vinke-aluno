@@ -123,8 +123,11 @@ function isRateLimited(email: string): boolean {
 }
 
 export async function POST(req: NextRequest) {
+  // Fora do try para o catch saber se é primeiro acesso (variável da requisição)
+  let primeiroAcessoReq = false;
   try {
     const body = await req.json() as { email?: unknown; primeiroAcesso?: unknown };
+    primeiroAcessoReq = body.primeiroAcesso === true;
     const primeiroAcesso = body.primeiroAcesso === true;
     const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
 
@@ -135,7 +138,16 @@ export async function POST(req: NextRequest) {
     // Rate limit: máximo 3 tentativas por e-mail por minuto
     if (isRateLimited(email)) {
       // Retorna ok=true para não revelar se o e-mail existe
-      return NextResponse.json({ ok: true });
+      return NextResponse.json({ ok: true, ...(primeiroAcesso ? { limite: true } : {}) });
+    }
+
+    // Primeiro acesso (quem COMPROU): dizer a verdade quando não há conta com
+    // esse e-mail. Antes a tela mostrava "Link enviado ✓" e nada chegava —
+    // e-mail digitado diferente na compra ou pagamento ainda não confirmado.
+    // No "esqueci minha senha" comum seguimos sem revelar se o e-mail existe.
+    if (primeiroAcesso) {
+      const existe = await getAdminAuth().getUserByEmail(email).then(() => true, () => false);
+      if (!existe) return NextResponse.json({ ok: true, encontrado: false });
     }
 
     const actionCodeSettings = {
@@ -165,6 +177,10 @@ export async function POST(req: NextRequest) {
     const msg = error instanceof Error ? error.message : String(error);
     console.error("[esqueci-senha]", msg);
     // Sempre retorna ok=true para não revelar se o e-mail existe no sistema
+    // (exceto no primeiro acesso, em que a falha de envio precisa aparecer)
+    if (primeiroAcessoReq) {
+      return NextResponse.json({ ok: false, error: "Não foi possível enviar o e-mail agora. Tente de novo em instantes." }, { status: 500 });
+    }
     return NextResponse.json({ ok: true });
   }
 }

@@ -439,6 +439,7 @@ export default function PerfilClient() {
 
 type StatsSession = {
   status?: string;
+  kind?: string;
   answeredCount?: number;
   correctCount?: number;
   updatedAt?: unknown;
@@ -471,8 +472,11 @@ function PerfilStats() {
           getDoc(doc(db, "users", u.uid, "meta", "stats")),
         ]);
         const sessions = sessSnap.docs.map((d) => d.data() as StatsSession);
-        setRespondidas(sessions.reduce((a, x) => a + Number(x.answeredCount ?? 0), 0));
-        setSimulados(sessions.filter((x) => x.status === "completed").length);
+        // mesmos números do Início: total oficial (meta/stats) e só simulados
+        // de verdade (sem diagnóstico nem "refazer erros")
+        const totalStats = Number((statsSnap.data() as { totalAnswered?: number } | undefined)?.totalAnswered ?? 0) || 0;
+        setRespondidas(totalStats || sessions.reduce((a, x) => a + Number(x.answeredCount ?? 0), 0));
+        setSimulados(sessions.filter((x) => x.status === "completed" && x.kind !== "error_review" && x.kind !== "diagnostico").length);
         if (statsSnap.exists()) {
           // "Melhor sequência": longestStreak (o campo bestStreak nunca existiu)
           setStreak(lerHoje(statsSnap.data() as Record<string, unknown>).melhorSequencia);

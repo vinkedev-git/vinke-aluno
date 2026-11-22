@@ -280,6 +280,10 @@ export default function DashboardClient() {
   const [firestoreName, setFirestoreName] = useState("");
   const [flashcardStats, setFlashcardStats] = useState({ studied: 0, due: 0, mastered: 0 });
   const [streakCount, setStreakCount] = useState(0);
+  // totais oficiais do aluno (meta/stats): incluem Questão do dia e não
+  // dependem de quantas sessões a tela carregou (antes: limit(80) e números
+  // diferentes do Perfil)
+  const [totaisStats, setTotaisStats] = useState<{ respondidas: number; acertos: number } | null>(null);
   const [daily, setDaily] = useState<{ exists: boolean; answered: boolean } | null>(null);
   const [todayProgress, setTodayProgress] = useState({ questions: 0, flashcards: 0 });
   const [dailyGoals, setDailyGoals] = useState({ questionsGoal: 20, flashcardsGoal: 10 });
@@ -320,7 +324,9 @@ export default function DashboardClient() {
       }
 
       if (statsSnap.exists()) {
-        const h = lerHoje(statsSnap.data() as Record<string, unknown>);
+        const sd = statsSnap.data() as Record<string, unknown>;
+        const h = lerHoje(sd);
+        setTotaisStats({ respondidas: Number(sd.totalAnswered ?? 0) || 0, acertos: Number(sd.totalCorrect ?? 0) || 0 });
         setStreakCount(h.sequencia);
         setTodayProgress({ questions: h.questoes, flashcards: h.flashcards });
       }
@@ -404,12 +410,13 @@ export default function DashboardClient() {
   // ── Derivados ──────────────────────────────────────────────────────────────
 
   const stats = useMemo(() => {
-    const respondidas = sessions.reduce((acc, s) => acc + safeNum(s.answeredCount), 0);
-    const acertos = sessions.reduce((acc, s) => acc + safeNum(s.correctCount), 0);
-    const concluidos = sessions.filter((s) => s.status === "completed").length;
+    const respondidas = totaisStats?.respondidas || sessions.reduce((acc, s) => acc + safeNum(s.answeredCount), 0);
+    const acertos = totaisStats?.respondidas ? totaisStats.acertos : sessions.reduce((acc, s) => acc + safeNum(s.correctCount), 0);
+    // simulado de verdade: não conta diagnóstico nem "refazer erros"
+    const concluidos = sessions.filter((s) => s.status === "completed" && s.kind !== "error_review" && s.kind !== "diagnostico").length;
     const aproveitamentoPct = respondidas > 0 ? (acertos / respondidas) * 100 : 0;
     return { respondidas, acertos, concluidos, aproveitamentoPct };
-  }, [sessions]);
+  }, [sessions, totaisStats]);
 
   const inProgressSession = useMemo(
     () => sessions.find((s) => s.status === "in_progress") ?? null,
@@ -534,20 +541,32 @@ export default function DashboardClient() {
           diasParaProva={diasParaProva}
           streakCount={streakCount}
         />
-        <div className="mx-auto mt-8 flex max-w-md flex-col items-center gap-2.5 rounded-2xl border-[1.5px] border-dashed border-vinke-line bg-white p-8 text-center dark:border-vinke-navy-line dark:bg-vinke-navy-card">
+        {/* Quem ainda não abriu nenhum simulado também vê os avisos (antes
+            esta tela escondia o ENEM 2026, o Vinke aberto e o diagnóstico) */}
+        <AvisoProva2026 />
+        {plano.aberto && <AvisoAberto />}
+        <div className="mx-auto mt-4 flex max-w-md flex-col items-center gap-2.5 rounded-2xl border-[1.5px] border-dashed border-vinke-line bg-white p-8 text-center dark:border-vinke-navy-line dark:bg-vinke-navy-card">
           <VinkeSymbol size={30} className="opacity-30" />
           <span className="font-display text-lg font-bold text-vinke-ink dark:text-white">
             Boas-vindas, {nome}!
           </span>
           <span className="text-xs leading-relaxed text-vinke-ink3">
-            Responda suas primeiras questões para o Vinke conhecer seu nível e começar a medir sua evolução.
+            Comece pelo diagnóstico: 10 questões das quatro áreas mostram onde você está e o que treinar primeiro.
           </span>
           <Link
-            href="/aluno/simulados/novo?qtd=10"
+            href="/aluno/diagnostico"
             className="mt-1 rounded-[9px] bg-vinke px-5 py-2.5 text-xs font-bold text-white transition hover:bg-vinke-deep"
           >
-            Começar com 10 questões
+            Fazer o diagnóstico
           </Link>
+          <div className="flex gap-3 text-[11px] font-semibold">
+            <Link href="/aluno/simulados/novo?qtd=10" className="text-vinke hover:underline dark:text-vinke-lav">
+              ou 10 questões livres
+            </Link>
+            <Link href="/aluno/questao-do-dia" className="text-vinke hover:underline dark:text-vinke-lav">
+              Questão do dia
+            </Link>
+          </div>
         </div>
       </div>
     );
