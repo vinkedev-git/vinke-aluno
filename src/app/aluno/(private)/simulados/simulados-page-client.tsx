@@ -125,10 +125,14 @@ export default function SimuladosPageClient() {
     return map;
   }, [sessions]);
 
-  async function onDelete(sessionId: string) {
+  async function onDelete(sessionId: string, emAndamento = false) {
     const u = auth.currentUser;
     if (!u) return;
-    const ok = window.confirm("Excluir este simulado? Isso não pode ser desfeito.");
+    const ok = window.confirm(
+      emAndamento
+        ? "Descartar este simulado em andamento? As respostas dele deixam de aparecer aqui. As questões que você já respondeu continuam contando no seu progresso."
+        : "Excluir este simulado? Isso não pode ser desfeito."
+    );
     if (!ok) return;
     setDeletingId(sessionId);
     try {
@@ -194,6 +198,14 @@ export default function SimuladosPageClient() {
             >
               Continuar
             </Link>
+            <button
+              type="button"
+              onClick={() => void onDelete(s.id, true)}
+              disabled={deletingId === s.id}
+              className="text-center text-[11px] font-semibold text-slate-400 transition hover:text-white disabled:opacity-50"
+            >
+              {deletingId === s.id ? "Descartando..." : "Descartar"}
+            </button>
           </div>
         );
       })}

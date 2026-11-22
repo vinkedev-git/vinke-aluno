@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { registrarErro } from "@/lib/telemetria";
 import { useRouter, useSearchParams } from "next/navigation";
 import { collection, doc, getDocs, serverTimestamp, writeBatch } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
@@ -55,6 +56,25 @@ function toStringArray(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return value.map((item) => String(item ?? "").trim()).filter(Boolean);
 }
+/**
+ * Índice leve do banco (rota /api/questoes/meta: id, ano, área, assuntos).
+ * Antes a tela baixava a coleção inteira a cada visita. Se a rota falhar,
+ * cai no jeito antigo para não deixar o aluno sem simulado.
+ */
+async function carregarPool(): Promise<QuestionBankDoc[]> {
+  try {
+    const r = await fetch("/api/questoes/meta");
+    const j = (await r.json()) as { ok?: boolean; questoes?: Array<{ id: string; y: number | null; a: string; t: string[] }> };
+    if (r.ok && j.ok && Array.isArray(j.questoes) && j.questoes.length) {
+      return j.questoes.map((q) => ({ id: q.id, isActive: true, examYear: q.y ?? undefined, areaId: q.a, assuntos: q.t }));
+    }
+  } catch {
+    /* cai no jeito antigo */
+  }
+  const snap = await getDocs(collection(db, "questionsBank"));
+  return snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<QuestionBankDoc, "id">) }));
+}
+
 function uniq(items: string[]) { return Array.from(new Set(items.filter(Boolean))); }
 
 function extractAssuntos(q: QuestionBankDoc): string[] {
@@ -114,6 +134,8 @@ export default function NovoSimuladoClient() {
   const [areas, setAreas] = useState<AreaDoc[]>([]);
   const [assuntos, setAssuntos] = useState<string[]>([]);
   const [questionsPool, setQuestionsPool] = useState<QuestionBankDoc[]>([]);
+  // falha ao carregar o banco: antes caía em "Sem questões disponíveis — ajuste os filtros"
+  const [falhaPool, setFalhaPool] = useState(false);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
 
@@ -175,15 +197,13 @@ export default function NovoSimuladoClient() {
         } catch { /* fallback abaixo */ }
 
         try {
-          const qbSnap = await getDocs(collection(db, "questionsBank"));
-          const pool: QuestionBankDoc[] = [];
-          qbSnap.docs.forEach((d) => {
-            const q = { id: d.id, ...(d.data() as Omit<QuestionBankDoc, "id">) };
-            pool.push(q);
-            extractAssuntos(q).forEach((t) => collectedAssuntos.add(t));
-          });
+          const pool = await carregarPool();
+          pool.forEach((q) => extractAssuntos(q).forEach((t) => collectedAssuntos.add(t)));
           setQuestionsPool(pool);
-        } catch { /* mantém assuntos */ }
+        } catch (e) {
+          registrarErro("novo-simulado-carregar", e);
+          setFalhaPool(true);
+        }
 
         setAssuntos(Array.from(collectedAssuntos).sort((a, b) => a.localeCompare(b, "pt-BR")));
       } finally {
@@ -301,8 +321,7 @@ export default function NovoSimuladoClient() {
   ])) as Record<string, number>, [assuntos, activeQuestions, selectedAnos, selectedAreas]);
 
   async function pickQuestions(): Promise<QuestionBankDoc[]> {
-    const source = questionsPool.length > 0 ? questionsPool
-      : (await getDocs(collection(db, "questionsBank"))).docs.map((d) => ({ id: d.id, ...(d.data() as Omit<QuestionBankDoc, "id">) }));
+    const source = questionsPool.length > 0 ? questionsPool : await carregarPool();
     const ativas = source.filter((q) => q.isActive !== false);
     const exatas = shuffle(
       ativas.filter((q) =>
@@ -381,6 +400,9 @@ export default function NovoSimuladoClient() {
       console.error(e);
       if (plano.gratuito && (e as { code?: string })?.code === "permission-denied") {
         setLimiteSemanalAtingido(true);
+      } else {
+        registrarErro("novo-simulado-criar", e);
+        window.alert("Não foi possível criar o simulado agora. Confira sua conexão e tente de novo.");
       }
     } finally {
       setCreating(false);
@@ -641,7 +663,13 @@ export default function NovoSimuladoClient() {
                   {effectiveQuestionCount === 1 ? "questão" : "questões"}
                 </>
               ) : (
-                <span className="text-vinke-red dark:text-vinke-red-dark">Sem questões disponíveis</span>
+                falhaPool ? (
+                  <button type="button" onClick={() => window.location.reload()} className="text-vinke-red underline dark:text-vinke-red-dark">
+                    Não deu para carregar as questões. Tentar de novo
+                  </button>
+                ) : (
+                  <span className="text-vinke-red dark:text-vinke-red-dark">Sem questões disponíveis</span>
+                )
               )}
             </div>
             <div className="text-xs text-vinke-ink3">

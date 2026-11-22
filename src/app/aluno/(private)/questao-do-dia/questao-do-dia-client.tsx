@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { registrarErro } from "@/lib/telemetria";
 import { lerHoje } from "@/lib/study-tracking";
 import { shuffledOptions, optionLabel } from "@/lib/shuffledOptions";
 import { useRouter } from "next/navigation";
@@ -88,6 +89,7 @@ export default function QuestaoDoDiaClient() {
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [streak, setStreak] = useState(0);
+  const [erroConfirmar, setErroConfirmar] = useState("");
 
   const load = useCallback(async () => {
     const u = auth.currentUser;
@@ -145,7 +147,12 @@ export default function QuestaoDoDiaClient() {
     if (!u || !question || !selected || submitting) return;
     setSubmitting(true);
     const ok = !!correctId && selected === correctId;
+    setErroConfirmar("");
     try {
+      // Primeiro marca a questão do dia como respondida; só depois conta a
+      // resposta. Antes as duas iam em paralelo sem esperar: se a marcação
+      // falhasse, a questão voltava como não respondida e era contada 2 vezes.
+      await markDailyAnswered(u.uid, dateKey, ok, selected);
       void recordAnswer({
         uid: u.uid,
         question,
@@ -153,9 +160,11 @@ export default function QuestaoDoDiaClient() {
         selectedOptionId: selected,
         correctOptionId: correctId || null,
       });
-      void markDailyAnswered(u.uid, dateKey, ok, selected);
       setIsCorrect(ok);
       setPhase("revealed");
+    } catch (e) {
+      registrarErro("questao-do-dia-responder", e);
+      setErroConfirmar("Não foi possível salvar sua resposta. Confira sua conexão e toque em Confirmar de novo.");
     } finally {
       setSubmitting(false);
     }
@@ -283,6 +292,11 @@ export default function QuestaoDoDiaClient() {
         </div>
 
         {/* Confirm or result */}
+        {erroConfirmar && !revealed ? (
+          <div role="alert" className="mt-4 rounded-[9px] bg-vinke-red-soft px-3 py-2.5 text-xs font-semibold text-vinke-red dark:bg-vinke-red/10 dark:text-vinke-red-dark">
+            {erroConfirmar}
+          </div>
+        ) : null}
         {!revealed ? (
           <button
             type="button"

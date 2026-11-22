@@ -38,12 +38,17 @@ function plainSnippet(raw: string, max = 220): string {
   return text.length > max ? text.slice(0, max).trimEnd() + "…" : text;
 }
 
-/** Data local no formato YYYY-MM-DD (sem fuso UTC). */
+/**
+ * Dia no fuso de BRASÍLIA (UTC-3), formato YYYY-MM-DD — o mesmo das
+ * firestore.rules (diaHoje) e do contador planUso. Antes usava a data do
+ * celular: em Manaus/Acre, ou com relógio errado, a tela e o servidor
+ * discordavam sobre "hoje" (bloqueio inesperado quando os limites voltarem).
+ */
 export function dayKey(d = new Date()): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
+  const b = new Date(d.getTime() - 3 * 3_600_000);
+  const m = String(b.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(b.getUTCDate()).padStart(2, "0");
+  return `${b.getUTCFullYear()}-${m}-${day}`;
 }
 
 function yesterdayKey(): string {

@@ -480,7 +480,9 @@ export default function QuizClient({ sessionId }: { sessionId: string }) {
     if (isReviewMode) return;
     const u = auth.currentUser;
     if (!u) return;
-    const delta = Date.now() - segStartRef.current;
+    // Trecho contínuo de no máximo 10 min: sem isso, simulado aberto com o
+    // celular bloqueado até o dia seguinte virava "tempo total 14h05".
+    const delta = Math.min(Date.now() - segStartRef.current, 10 * 60 * 1000);
     if (delta < 500) return;
     segStartRef.current = Date.now();
     clockBaseRef.current += delta;
@@ -488,6 +490,18 @@ export default function QuizClient({ sessionId }: { sessionId: string }) {
       timeSpentMs: increment(delta),
     }).catch(() => { /* cronômetro é best-effort */ });
   }, [isReviewMode, sessionId]);
+
+  // Pausa o cronômetro com o app fora da tela (celular bloqueado, outra aba):
+  // grava o tempo ao sair e recomeça a contar só na volta.
+  useEffect(() => {
+    const onVis = () => {
+      if (document.visibilityState === "hidden") flushClock();
+      else segStartRef.current = Date.now();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, [flushClock]);
+
   const currentSavedAnswer = useMemo(() => {
     if (!session || !currentQuestion) return null;
     const saved = session.answersMap?.[currentQuestion.id];

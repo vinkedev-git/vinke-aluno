@@ -127,7 +127,17 @@ export async function POST(req: NextRequest) {
       },
       { merge: true }
     );
-    await batch.commit();
+    try {
+      await batch.commit();
+    } catch (e) {
+      // Sem os docs de users/entitlements a conta fica sem acesso para sempre
+      // (e o e-mail "já existe" na próxima tentativa). Desfaz a conta para o
+      // aluno poder tentar de novo do zero.
+      await getAdminAuth().deleteUser(user.uid).catch((delErr) => {
+        console.error("[cadastro] falha ao desfazer conta", user.uid, delErr instanceof Error ? delErr.message : delErr);
+      });
+      throw e;
+    }
 
     return NextResponse.json({ ok: true });
   } catch (error) {

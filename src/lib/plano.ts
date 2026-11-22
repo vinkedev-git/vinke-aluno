@@ -77,10 +77,8 @@ export function brtSemanaKey(): string {
 
 // Mesmo formato do dayKey() de study-tracking.ts (data local YYYY-MM-DD)
 function dayKeyHoje(): string {
-  const d = new Date();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${d.getFullYear()}-${mm}-${dd}`;
+  // mesmo dia de Brasília do dayKey() de study-tracking e das regras
+  return brtDiaKey();
 }
 
 /**

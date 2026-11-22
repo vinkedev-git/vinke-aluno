@@ -25,6 +25,8 @@ export default function CadastroClient() {
   const [anoEnem, setAnoEnem] = useState("");
   const [loading, setLoading] = useState(false);
   const [uiError, setUiError] = useState("");
+  // Conta criada, mas o login automático falhou (rede): não dizer "falhou".
+  const [contaCriada, setContaCriada] = useState(false);
 
   // Máscara leve: o aluno digita só números e vê (11) 99999-9999
   const formatarCelular = (valor: string) => {
@@ -81,7 +83,12 @@ export default function CadastroClient() {
 
       // Conta criada — entra direto.
       track("CompleteRegistration", { content_name: "Plano gratuito" });
-      await signInWithEmailAndPassword(auth, eMail, senha);
+      try {
+        await signInWithEmailAndPassword(auth, eMail, senha);
+      } catch {
+        setContaCriada(true);
+        return;
+      }
       router.replace("/aluno/diagnostico");
     } catch {
       setUiError("Não foi possível criar sua conta. Verifique sua conexão e tente novamente.");
@@ -186,6 +193,19 @@ export default function CadastroClient() {
             </div>
 
             <form onSubmit={onCadastro} className="space-y-4">
+              {contaCriada ? (
+                <div className="rounded-2xl bg-vinke-soft px-4 py-3 text-sm font-semibold text-vinke-ink dark:bg-vinke/10 dark:text-white">
+                  Conta criada! A conexão falhou na hora de entrar.
+                  <div className="mt-2">
+                    <a
+                      href={`/aluno/entrar?email=${encodeURIComponent(email.trim().toLowerCase())}`}
+                      className="inline-block rounded-[9px] bg-vinke px-4 py-2 text-xs font-bold text-white"
+                    >
+                      Toque para entrar
+                    </a>
+                  </div>
+                </div>
+              ) : null}
               {uiError ? (
                 <div className="rounded-2xl bg-vinke-red-soft px-4 py-3 text-sm text-vinke-red dark:bg-vinke-red/10 dark:text-vinke-red-dark">
                   {uiError}

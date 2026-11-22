@@ -8,8 +8,11 @@ import {
   doc,
   getDoc,
   getDocs,
+  limit,
+  query,
   setDoc,
   serverTimestamp,
+  where,
 } from "firebase/firestore";
 import { dayKey } from "@/lib/study-tracking";
 
@@ -125,9 +128,8 @@ export async function getOrCreateDailyQuestion(uid: string): Promise<DailyQuesti
 
   // Seleção: stats (tema fraco) + banco + questão de ontem (evitar repetir)
   const yKey = dayKey(new Date(Date.now() - 24 * 60 * 60 * 1000));
-  const [statsSnap, qbSnap, yesterdaySnap] = await Promise.all([
+  const [statsSnap, yesterdaySnap] = await Promise.all([
     getDoc(doc(db, "users", uid, "meta", "stats")),
-    getDocs(collection(db, "questionsBank")),
     getDoc(doc(db, "users", uid, "dailyQuestions", yKey)),
   ]);
 
@@ -135,11 +137,31 @@ export async function getOrCreateDailyQuestion(uid: string): Promise<DailyQuesti
   const weakTheme = pickWeakTheme(stats);
   const avoidId = yesterdaySnap.exists() ? safeStr((yesterdaySnap.data() as DailyQuestionDoc).questionId) : "";
 
-  const pool: RawQuestion[] = qbSnap.docs
-    .map((d) => ({ id: d.id, ...(d.data() as Record<string, unknown>) } as RawQuestion))
-    .filter((q) => q.isActive !== false)
-    .filter(hasUsableExplanation)
-    .filter((q) => q.id !== avoidId);
+  // Antes baixava o banco inteiro (4.000+ questões com enunciado e resolução)
+  // para sortear UMA — no 3G a tela ficava em "Preparando…". Agora busca só o
+  // assunto mais fraco ou, sem ele, uma prova sorteada.
+  const usaveis = (docs: { id: string; data: () => unknown }[]) =>
+    docs
+      .map((d) => ({ id: d.id, ...(d.data() as Record<string, unknown>) } as RawQuestion))
+      .filter((q) => q.isActive !== false)
+      .filter(hasUsableExplanation)
+      .filter((q) => q.id !== avoidId);
+  let pool: RawQuestion[] = [];
+  if (weakTheme) {
+    for (const campo of ["themes", "assuntos"]) {
+      const snap = await getDocs(query(collection(db, "questionsBank"), where(campo, "array-contains", weakTheme), limit(300)));
+      pool = usaveis(snap.docs);
+      if (pool.length) break;
+    }
+  }
+  if (pool.length === 0) {
+    const anos = shuffle(Array.from({ length: 2026 - 2009 + 1 }, (_, i) => 2009 + i));
+    for (const ano of anos.slice(0, 4)) {
+      const snap = await getDocs(query(collection(db, "questionsBank"), where("examYear", "==", ano)));
+      pool = usaveis(snap.docs);
+      if (pool.length) break;
+    }
+  }
 
   if (pool.length === 0) {
     return { dateKey, questionId: "", tema: null, answered: false, isCorrect: null, selectedOptionId: null, question: null };

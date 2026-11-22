@@ -39,11 +39,6 @@ function isTimestampLike(value: unknown): value is TimestampLike {
   return typeof value === "object" && value !== null;
 }
 
-function getErrorMessage(error: unknown, fallback: string) {
-  if (error instanceof Error && error.message) return error.message;
-  return fallback;
-}
-
 function toDate(value: unknown): Date | null {
   if (!value) return null;
 
@@ -136,7 +131,9 @@ export default function AssinaturaClient() {
       setEnt({ ...data, uid: u.uid, email: u.email || data.email });
     } catch (error: unknown) {
       console.error(error);
-      setError(getErrorMessage(error, "Falha ao carregar assinatura."));
+      // Mensagem crua do Firebase ("Missing or insufficient permissions") não
+      // ajuda o aluno; o detalhe fica no console.
+      setError("Não deu para carregar sua assinatura. Confira sua conexão e tente de novo.");
     } finally {
       setLoading(false);
     }
@@ -234,7 +231,7 @@ export default function AssinaturaClient() {
           </div>
 
           <div className="mt-4 text-sm text-vinke-ink2 dark:text-slate-300">
-            Se você acabou de comprar, aguarde alguns instantes para o webhook atualizar seu acesso.
+            Se você acabou de comprar, o acesso costuma ser liberado em poucos minutos depois da confirmação do pagamento.
           </div>
 
           <div className="mt-5 flex flex-col sm:flex-row gap-3">
@@ -328,12 +325,9 @@ export default function AssinaturaClient() {
                 </div>
 
                 <div className="rounded-2xl bg-vinke-navy-card p-5">
-                  <div className="text-xs text-slate-400">Produto</div>
+                  <div className="text-xs text-slate-400">Como entrou</div>
                   <div className="mt-2 text-sm font-semibold text-white">
-                    {ent?.productId ? `ID: ${ent.productId}` : "—"}
-                  </div>
-                  <div className="mt-2 text-xs text-slate-400">
-                    Origem: <span className="font-semibold text-slate-200">{ent?.source || "—"}</span>
+                    {String(ent?.source ?? "").startsWith("cadastro") ? "Cadastro gratuito" : ent?.productId ? "Compra pela Eduzz" : "—"}
                   </div>
                 </div>
               </div>
@@ -363,7 +357,7 @@ export default function AssinaturaClient() {
               <div className="rounded-2xl border bg-white p-4 dark:border-vinke-navy-line dark:bg-vinke-navy-card">
                 <div className="text-sm font-bold text-vinke-ink dark:text-slate-100">Atualização automática</div>
                 <div className="mt-1 text-sm text-vinke-ink2 dark:text-slate-300">
-                  Seu acesso é atualizado via webhook da Eduzz (pagamento/renovação/cancelamento).
+                  Pagamentos, renovações e cancelamentos feitos na Eduzz atualizam seu acesso sozinhos, em poucos minutos.
                 </div>
               </div>
 
