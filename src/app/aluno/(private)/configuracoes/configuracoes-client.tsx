@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { auth, db } from "@/lib/firebase";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
+import { esquecerDiasEstudo } from "@/lib/study-tracking";
 import { Settings2, CheckCircle2, Target, Zap } from "lucide-react";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -93,6 +94,7 @@ export default function ConfiguracoesClient() {
         { ...form, updatedAt: serverTimestamp() },
         { merge: true }
       );
+      esquecerDiasEstudo(u.uid);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } finally {
@@ -198,8 +200,8 @@ export default function ConfiguracoesClient() {
         </div>
         <div className="mt-2 text-xs text-vinke-ink4 dark:text-vinke-ink3">
           {form.studyDays.length === 0
-            ? "Nenhum dia selecionado."
-            : `${form.studyDays.length} dia${form.studyDays.length > 1 ? "s" : ""} por semana.`}
+            ? "Nenhum dia selecionado: todos os dias contam para a sequência."
+            : `${form.studyDays.length} dia${form.studyDays.length > 1 ? "s" : ""} por semana. Nos outros dias você folga sem perder a sequência, e o Início mostra quantos dias você já estudou na semana.`}
         </div>
       </div>
 
@@ -237,7 +239,7 @@ export default function ConfiguracoesClient() {
               <div className="flex items-center justify-between gap-4">
                 <div className="flex flex-col">
                   <span className="text-xs font-bold text-vinke-ink dark:text-slate-200">Meta de nota</span>
-                  <span className="text-[10px] font-medium text-vinke-ink3">usada no acompanhamento do Início</span>
+                  <span className="text-[10px] font-medium text-vinke-ink3">aparece no Início, junto da contagem até a prova</span>
                 </div>
                 <input
                   type="number"

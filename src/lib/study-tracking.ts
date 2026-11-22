@@ -51,23 +51,137 @@ export function dayKey(d = new Date()): string {
   return `${b.getUTCFullYear()}-${m}-${day}`;
 }
 
-function yesterdayKey(): string {
-  return dayKey(new Date(Date.now() - 24 * 60 * 60 * 1000));
+// ─── Sequência única de estudo ──────────────────────────────────────────────
+// Um dia conta para a sequência se o aluno respondeu questão OU estudou
+// flashcard. Os dias de folga (fora de "Dias de estudo" nas Configurações)
+// não quebram a sequência; estudar num dia de folga também conta.
+// Campos em meta/stats: streakCount, streakLastDay, longestStreak e
+// diasEstudados (últimos dias com estudo, para o resumo da semana).
+
+const DIAS_SEMANA = ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"];
+
+function keyParaUtc(key: string): number {
+  const [y, m, d] = key.split("-").map(Number);
+  return Date.UTC(y, (m || 1) - 1, d || 1);
+}
+
+function somarDias(key: string, n: number): string {
+  const t = new Date(keyParaUtc(key) + n * 86_400_000);
+  return `${t.getUTCFullYear()}-${String(t.getUTCMonth() + 1).padStart(2, "0")}-${String(t.getUTCDate()).padStart(2, "0")}`;
+}
+
+/** Nome do dia da semana ("segunda"...) de uma chave YYYY-MM-DD. */
+export function diaDaSemana(key: string): string {
+  return DIAS_SEMANA[new Date(keyParaUtc(key)).getUTCDay()];
+}
+
+/** Sem dias escolhidos (ou configuração antiga) = todos os dias contam. */
+export function ehDiaDeEstudo(key: string, diasEstudo?: string[] | null): boolean {
+  if (!diasEstudo || diasEstudo.length === 0) return true;
+  return diasEstudo.includes(diaDaSemana(key));
+}
+
+/**
+ * A sequência segue viva se, entre o último dia estudado e hoje, só houve
+ * dias de folga. Teto de 14 dias de folga seguidos.
+ */
+function sequenciaViva(ultimo: string, hoje: string, diasEstudo?: string[] | null): boolean {
+  if (!ultimo) return false;
+  if (ultimo >= hoje) return ultimo === hoje;
+  let k = somarDias(ultimo, 1);
+  for (let i = 0; i < 14 && k < hoje; i++) {
+    if (ehDiaDeEstudo(k, diasEstudo)) return false;
+    k = somarDias(k, 1);
+  }
+  return k === hoje;
+}
+
+function lerDiasEstudo(settings: Record<string, unknown> | null | undefined): string[] | null {
+  const v = settings?.studyDays;
+  return Array.isArray(v) ? v.map((x) => String(x)) : null;
+}
+
+// Dias de estudo do aluno, lidos uma vez a cada 5 min (cada resposta
+// precisaria de mais uma leitura).
+const cacheDias = new Map<string, { em: number; dias: string[] | null }>();
+async function diasEstudoDe(uid: string): Promise<string[] | null> {
+  const c = cacheDias.get(uid);
+  if (c && Date.now() - c.em < 5 * 60_000) return c.dias;
+  try {
+    const snap = await getDoc(doc(db, "users", uid, "meta", "settings"));
+    const dias = lerDiasEstudo(snap.exists() ? (snap.data() as Record<string, unknown>) : null);
+    cacheDias.set(uid, { em: Date.now(), dias });
+    return dias;
+  } catch {
+    return null;
+  }
+}
+
+/** Chamar depois de salvar as Configurações. */
+export function esquecerDiasEstudo(uid: string) {
+  cacheDias.delete(uid);
+}
+
+/** Campos da sequência a gravar em meta/stats quando o aluno estuda hoje. */
+function marcarDiaEstudado(prev: Record<string, unknown>, diasEstudo: string[] | null) {
+  const hoje = dayKey();
+  const ultimo = safeStr(prev.streakLastDay);
+  let streakCount = Number(prev.streakCount ?? 0) || 0;
+  if (ultimo !== hoje) {
+    streakCount = sequenciaViva(ultimo, hoje, diasEstudo) ? streakCount + 1 : 1;
+  }
+  const anteriores = Array.isArray(prev.diasEstudados) ? prev.diasEstudados.map(safeStr) : [];
+  const diasEstudados = Array.from(new Set([...anteriores, hoje])).sort().slice(-14);
+  return {
+    streakCount,
+    streakLastDay: hoje,
+    longestStreak: Math.max(Number(prev.longestStreak ?? 0) || 0, streakCount),
+    diasEstudados,
+  };
+}
+
+/**
+ * Semana atual (segunda a domingo, Brasília): quantos dias de estudo
+ * planejados já passaram ou são hoje, e em quantos dias o aluno estudou.
+ */
+export function resumoSemana(
+  stats: Record<string, unknown> | null | undefined,
+  settings: Record<string, unknown> | null | undefined
+) {
+  const hoje = dayKey();
+  const diasEstudo = lerDiasEstudo(settings);
+  const dow = new Date(keyParaUtc(hoje)).getUTCDay(); // 0 = domingo
+  const segunda = somarDias(hoje, -((dow + 6) % 7));
+  const estudados = new Set(Array.isArray(stats?.diasEstudados) ? stats!.diasEstudados.map(safeStr) : []);
+  const semana = Array.from({ length: 7 }, (_, i) => somarDias(segunda, i));
+  const planejados = semana.filter((k) => ehDiaDeEstudo(k, diasEstudo));
+  return {
+    planejadosNaSemana: planejados.length,
+    estudadosNaSemana: semana.filter((k) => k <= hoje && estudados.has(k)).length,
+    hojeEhFolga: !ehDiaDeEstudo(hoje, diasEstudo),
+  };
 }
 
 /**
  * Leitura dos contadores do DIA a partir de users/{uid}/meta/stats.
  * todayAnswered/todayCorrect/todayFlashcards só são de hoje se a chave do dia
  * bater — sem isso o Início mostrava de manhã os números de ontem.
- * A sequência só está viva se a última resposta foi hoje ou ontem; senão é 0
- * (antes aparecia "12 dias" e virava 1 quando o aluno respondia).
+ * A sequência só está viva se o aluno estudou hoje ou se, desde o último dia
+ * estudado, só houve dias de folga; senão é 0 (antes aparecia "12 dias" e
+ * virava 1 quando o aluno respondia). Passe `settings` (meta/settings) para
+ * respeitar os dias de estudo do aluno.
  */
-export function lerHoje(stats: Record<string, unknown> | null | undefined) {
+export function lerHoje(
+  stats: Record<string, unknown> | null | undefined,
+  settings?: Record<string, unknown> | null
+) {
   const s = stats ?? {};
   const hoje = dayKey();
   const ehHoje = safeStr(s.todayKey) === hoje;
   const ultimo = safeStr(s.streakLastDay);
-  const viva = ultimo === hoje || ultimo === yesterdayKey();
+  // viva se estudou hoje ou se, desde o último dia estudado, só houve folgas
+  const diasEstudo = lerDiasEstudo(settings);
+  const viva = sequenciaViva(ultimo, hoje, diasEstudo);
   return {
     questoes: ehHoje ? Number(s.todayAnswered ?? 0) || 0 : 0,
     certas: ehHoje ? Number(s.todayCorrect ?? 0) || 0 : 0,
@@ -75,6 +189,18 @@ export function lerHoje(stats: Record<string, unknown> | null | undefined) {
     sequencia: viva ? Number(s.streakCount ?? 0) || 0 : 0,
     melhorSequencia: Math.max(Number(s.longestStreak ?? 0) || 0, viva ? Number(s.streakCount ?? 0) || 0 : 0),
   };
+}
+
+/** Sequência atual (única) do aluno, já respeitando os dias de folga. */
+export async function lerSequenciaAtual(uid: string): Promise<number> {
+  const [st, se] = await Promise.all([
+    getDoc(doc(db, "users", uid, "meta", "stats")),
+    getDoc(doc(db, "users", uid, "meta", "settings")),
+  ]);
+  return lerHoje(
+    st.exists() ? (st.data() as Record<string, unknown>) : null,
+    se.exists() ? (se.data() as Record<string, unknown>) : null
+  ).sequencia;
 }
 
 /** Incrementa o contador de flashcards estudados hoje nas stats. */
@@ -91,9 +217,11 @@ export async function recordFlashcardSession(uid: string, count: number): Promis
     // hoje sempre que o aluno abrisse o dia pelos flashcards.
     const isNewDay = safeStr(prev.todayFlashcardsKey) !== today;
     const todayFlashcards = isNewDay ? count : (Number(prev.todayFlashcards ?? 0) + count);
+    // flashcard também é dia de estudo: entra na sequência única
+    const sequencia = marcarDiaEstudado(prev, await diasEstudoDe(uid));
     await setDoc(
       statsRef,
-      { todayFlashcards, todayFlashcardsKey: today, updatedAt: serverTimestamp() },
+      { todayFlashcards, todayFlashcardsKey: today, ...sequencia, updatedAt: serverTimestamp() },
       { merge: true }
     );
   } catch (e) {
@@ -150,22 +278,18 @@ export async function recordAnswer(input: RecordAnswerInput): Promise<void> {
     const statsSnap = await getDoc(statsRef);
     const prev = statsSnap.exists() ? (statsSnap.data() as Record<string, unknown>) : {};
 
-    // Streak (ofensiva): conta dias seguidos com pelo menos uma resposta.
+    // Sequência única (questões + flashcards, respeitando os dias de folga)
     const today = dayKey();
-    const lastDay = safeStr(prev.streakLastDay);
-    let streakCount = Number(prev.streakCount ?? 0);
-    if (lastDay !== today) {
-      streakCount = lastDay === yesterdayKey() ? streakCount + 1 : 1;
-    }
-    const longestStreak = Math.max(Number(prev.longestStreak ?? 0), streakCount);
+    const sequencia = marcarDiaEstudado(prev, await diasEstudoDe(uid));
 
     const byTheme: Record<string, { total: ReturnType<typeof increment>; correct: ReturnType<typeof increment> }> = {};
     for (const t of temas) {
       byTheme[t] = { total: increment(1), correct: increment(isCorrect ? 1 : 0) };
     }
 
-    // Contadores diários: reset automático quando muda o dia
-    const isNewDay = lastDay !== today;
+    // Contadores diários: reset quando muda o dia. Usa a chave das QUESTÕES:
+    // streakLastDay agora também é escrito pelos flashcards.
+    const isNewDay = safeStr(prev.todayKey) !== today;
     const todayAnswered = isNewDay ? 1 : (Number(prev.todayAnswered ?? 0) + 1);
     const todayCorrect = isNewDay ? (isCorrect ? 1 : 0) : (Number(prev.todayCorrect ?? 0) + (isCorrect ? 1 : 0));
 
@@ -175,9 +299,7 @@ export async function recordAnswer(input: RecordAnswerInput): Promise<void> {
         totalAnswered: increment(1),
         totalCorrect: increment(isCorrect ? 1 : 0),
         ...(temas.length ? { byTheme } : {}),
-        streakCount,
-        streakLastDay: today,
-        longestStreak,
+        ...sequencia,
         todayAnswered,
         todayCorrect,
         todayKey: today,

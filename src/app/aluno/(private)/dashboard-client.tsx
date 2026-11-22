@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { lerHoje } from "@/lib/study-tracking";
+import { lerHoje, resumoSemana } from "@/lib/study-tracking";
 import Link from "next/link";
 import { auth, db } from "@/lib/firebase";
 import PedirCelular from "@/components/aluno/PedirCelular";
@@ -290,6 +290,8 @@ export default function DashboardClient() {
   const [errorNotebookCount, setErrorNotebookCount] = useState(0);
   const [targetExam, setTargetExam] = useState("");
   const [targetExamDate, setTargetExamDate] = useState("");
+  const [metaNota, setMetaNota] = useState(0);
+  const [semana, setSemana] = useState<ReturnType<typeof resumoSemana> | null>(null);
 
   async function load({ keepVisible = false }: { keepVisible?: boolean } = {}) {
     const u = auth.currentUser;
@@ -323,9 +325,11 @@ export default function DashboardClient() {
         if (rawName) setFirestoreName(rawName.split(" ")[0]);
       }
 
+      const settingsData = settingsSnap.exists() ? (settingsSnap.data() as Record<string, unknown>) : null;
+      setSemana(resumoSemana(statsSnap.exists() ? (statsSnap.data() as Record<string, unknown>) : null, settingsData));
       if (statsSnap.exists()) {
         const sd = statsSnap.data() as Record<string, unknown>;
-        const h = lerHoje(sd);
+        const h = lerHoje(sd, settingsData);
         setTotaisStats({ respondidas: Number(sd.totalAnswered ?? 0) || 0, acertos: Number(sd.totalCorrect ?? 0) || 0 });
         setStreakCount(h.sequencia);
         setTodayProgress({ questions: h.questoes, flashcards: h.flashcards });
@@ -344,6 +348,7 @@ export default function DashboardClient() {
           dailyFlashcardsGoal?: number;
           targetExam?: string;
           targetExamDate?: string;
+          metaNota?: number;
         };
         setDailyGoals({
           questionsGoal: Number(s.dailyQuestionsGoal ?? 20),
@@ -351,6 +356,7 @@ export default function DashboardClient() {
         });
         setTargetExam(String(s.targetExam ?? ""));
         setTargetExamDate(String(s.targetExamDate ?? ""));
+        setMetaNota(Number(s.metaNota ?? 0) || 0);
       }
 
       setDaily(dailyStatus ? { exists: dailyStatus.exists, answered: dailyStatus.answered } : null);
@@ -632,6 +638,9 @@ export default function DashboardClient() {
                 <span className="font-display text-3xl font-bold text-vinke-ink dark:text-white">
                   {targetExam}
                 </span>
+                {metaNota > 0 ? (
+                  <span className="text-xs font-bold text-vinke dark:text-vinke-lav">nota {metaNota}</span>
+                ) : null}
               </div>
               <span className="text-xs font-semibold text-vinke-ink2 dark:text-slate-300">
                 {diasParaProva != null ? (
@@ -642,6 +651,12 @@ export default function DashboardClient() {
                   "Defina a data da prova nas Configurações."
                 )}
               </span>
+              {semana && semana.planejadosNaSemana > 0 ? (
+                <span className="text-[11px] font-semibold text-vinke-ink3">
+                  Esta semana: {Math.min(semana.estudadosNaSemana, 7)} de {semana.planejadosNaSemana} dias de estudo
+                  {semana.hojeEhFolga ? " · hoje é folga" : ""}
+                </span>
+              ) : null}
             </>
           ) : (
             <>

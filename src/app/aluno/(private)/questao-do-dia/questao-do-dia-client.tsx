@@ -2,11 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { registrarErro } from "@/lib/telemetria";
-import { lerHoje } from "@/lib/study-tracking";
+import { lerSequenciaAtual } from "@/lib/study-tracking";
 import { shuffledOptions, optionLabel } from "@/lib/shuffledOptions";
 import { useRouter } from "next/navigation";
-import { auth, db } from "@/lib/firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { auth } from "@/lib/firebase";
 import { getOrCreateDailyQuestion, markDailyAnswered, type RawQuestion } from "@/lib/daily";
 import { recordAnswer } from "@/lib/study-tracking";
 import { Button } from "@/components/ui/button";
@@ -110,10 +109,7 @@ export default function QuestaoDoDiaClient() {
       setDateKey(res.dateKey);
       setTema(res.tema);
       try {
-        const statsSnap = await getDoc(doc(db, "users", u.uid, "meta", "stats"));
-        if (statsSnap.exists()) {
-          setStreak(lerHoje(statsSnap.data() as Record<string, unknown>).sequencia);
-        }
+        setStreak(await lerSequenciaAtual(u.uid));
       } catch { /* streak é decorativo */ }
       if (res.answered) {
         setSelected(res.selectedOptionId);

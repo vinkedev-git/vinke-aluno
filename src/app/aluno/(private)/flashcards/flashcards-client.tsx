@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { lerSequenciaAtual } from "@/lib/study-tracking";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
@@ -40,6 +41,8 @@ export default function FlashcardsClient() {
   const access = useHasFlashcardsAccess();
   const [decks, setDecks] = useState<DeckListItem[]>([]);
   const [settings, setSettings] = useState<UserFlashcardSettingsDoc | null>(null);
+  // sequência única do app (questões + flashcards), a mesma do Início
+  const [sequencia, setSequencia] = useState(0);
   const [loading, setLoading] = useState(true);
   const [uid, setUid] = useState<string | null>(null);
   const [weakThemes, setWeakThemes] = useState<string[]>([]);
@@ -81,13 +84,15 @@ export default function FlashcardsClient() {
     (async () => {
       setLoading(true);
       try {
-        const [decksData, settingsData] = await Promise.all([
+        const [decksData, settingsData, seq] = await Promise.all([
           fetchPublishedDecks(),
           fetchOrCreateSettings(uid),
+          lerSequenciaAtual(uid).catch(() => 0),
         ]);
         if (!alive) return;
         setDecks(decksData);
         setSettings(settingsData);
+        setSequencia(seq);
       } finally {
         if (alive) setLoading(false);
       }
@@ -181,8 +186,8 @@ export default function FlashcardsClient() {
         <div className="grid gap-3 sm:grid-cols-3">
           <StatCard
             icon={Flame}
-            label="Streak"
-            value={settings.streak}
+            label="Sequência"
+            value={sequencia}
             suffix="dia(s)"
             tone="orange"
           />
