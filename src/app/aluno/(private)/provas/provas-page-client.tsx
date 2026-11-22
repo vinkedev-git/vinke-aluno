@@ -27,10 +27,18 @@ type YearRow = {
   total: number;
   answered: number;
   correct: number;
+  /** prova completa desse ano ainda aberta (para "Continuar") */
+  abertaId?: string;
+  abertaRespondidas?: number;
 };
 
 type SessionLike = {
   answersMap?: Record<string, { isCorrect?: boolean }>;
+  kind?: string;
+  status?: string;
+  filters?: { anos?: unknown[] };
+  answeredCount?: number;
+  updatedAt?: { toMillis?: () => number };
 };
 
 const ANO_MIN = 2009;
@@ -58,8 +66,25 @@ export default function ProvasPageClient() {
       // 1. respostas do aluno agrupadas por prova (ids ENEM{ano}_Qxxx)
       const sessSnap = await getDocs(collection(db, "users", u.uid, "sessions"));
       const byYear = new Map<number, { answered: Set<string>; correct: Set<string> }>();
+      // Prova completa em andamento por ano. Sem isto o único botão era "Nova
+      // tentativa", que cria uma prova do zero: em nov/2026 um aluno recriou a
+      // prova de 2026 cinco vezes tentando continuar. Fica a que tem MAIS
+      // respostas (não a mais recente, que costuma ser a recriada vazia).
+      const abertas = new Map<number, { id: string; respondidas: number; atualizada: number }>();
       sessSnap.docs.forEach((d) => {
-        const answers = (d.data() as SessionLike).answersMap ?? {};
+        const sd = d.data() as SessionLike;
+        if (sd.kind === "prova_oficial" && sd.status !== "completed") {
+          const ano = Number((sd.filters?.anos ?? [])[0]);
+          if (ano) {
+            const respondidas = Number(sd.answeredCount ?? 0);
+            const atualizada = sd.updatedAt?.toMillis?.() ?? 0;
+            const atual = abertas.get(ano);
+            if (!atual || respondidas > atual.respondidas || (respondidas === atual.respondidas && atualizada > atual.atualizada)) {
+              abertas.set(ano, { id: d.id, respondidas, atualizada });
+            }
+          }
+        }
+        const answers = sd.answersMap ?? {};
         for (const [qid, ans] of Object.entries(answers)) {
           const m = qid.match(/^ENEM(\d{4})_/);
           if (!m || !ans || typeof ans !== "object") continue;
@@ -94,6 +119,8 @@ export default function ProvasPageClient() {
           total,
           answered: agg?.answered.size ?? 0,
           correct: agg?.correct.size ?? 0,
+          abertaId: abertas.get(year)?.id,
+          abertaRespondidas: abertas.get(year)?.respondidas,
         });
       }
       anos.sort((a, b) => b.year - a.year);
@@ -270,21 +297,41 @@ export default function ProvasPageClient() {
               </div>
 
               <div className="flex shrink-0 items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => void resolverProva(r.year)}
-                  disabled={creating != null}
-                  className={cn(
-                    "rounded-[8px] px-3.5 py-2 text-[11px] font-bold transition disabled:opacity-60",
-                    started && !complete
-                      ? "bg-vinke text-white hover:bg-vinke-deep"
-                      : complete
+                {r.abertaId ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => router.push(`/aluno/simulados/${r.abertaId}`)}
+                      className="rounded-[8px] bg-vinke px-3.5 py-2 text-[11px] font-bold text-white transition hover:bg-vinke-deep"
+                    >
+                      Continuar{r.abertaRespondidas ? ` (${r.abertaRespondidas}/${r.total})` : ""}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (window.confirm("Começar a prova do zero? A tentativa atual continua salva no seu histórico.")) void resolverProva(r.year);
+                      }}
+                      disabled={creating != null}
+                      className="text-[11px] font-bold text-vinke-ink3 underline-offset-2 hover:underline disabled:opacity-60"
+                    >
+                      {isCreating ? "Preparando…" : "Recomeçar"}
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => void resolverProva(r.year)}
+                    disabled={creating != null}
+                    className={cn(
+                      "rounded-[8px] px-3.5 py-2 text-[11px] font-bold transition disabled:opacity-60",
+                      complete
                         ? "border-[1.5px] border-vinke-line text-vinke-ink hover:bg-vinke-offwhite dark:border-vinke-navy-line dark:text-slate-200 dark:hover:bg-vinke-navy-sel"
                         : "bg-vinke text-white hover:bg-vinke-deep"
-                  )}
-                >
-                  {isCreating ? "Preparando…" : complete ? "Refazer" : started ? "Nova tentativa" : "Resolver"}
-                </button>
+                    )}
+                  >
+                    {isCreating ? "Preparando…" : complete ? "Refazer" : "Resolver"}
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => router.push(`/aluno/simulados/novo?ano=${r.year}`)}

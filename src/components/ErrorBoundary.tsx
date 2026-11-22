@@ -2,6 +2,7 @@
 
 import { Component, ReactNode } from "react";
 import { AlertTriangle, RefreshCw } from "lucide-react";
+import { registrarErro } from "@/lib/telemetria";
 
 type Props = {
   children: ReactNode;
@@ -23,6 +24,7 @@ export default class ErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error) {
     // Log sem dados sensíveis
     console.error("[ErrorBoundary]", error.message);
+    registrarErro("tela-quebrou", error);
   }
 
   reset = () => {

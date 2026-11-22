@@ -9,6 +9,7 @@ import { AlunoThemeProvider } from "@/components/aluno/AlunoThemeProvider";
 import { ToastProvider } from "@/components/ui/toast";
 import { PageHeaderProvider } from "@/components/aluno/AlunoPageHeaderContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import CapturaErros from "@/components/CapturaErros";
 import { X } from "lucide-react";
 
 export default function AlunoPrivateLayout({
@@ -22,6 +23,7 @@ export default function AlunoPrivateLayout({
     <AlunoThemeProvider>
       <ToastProvider>
         <PageHeaderProvider>
+          <CapturaErros />
           <AlunoGuard>
             <div className="min-h-screen overflow-x-hidden bg-vinke-offwhite dark:bg-vinke-navy">
               <div className="flex min-h-screen">

@@ -21,6 +21,7 @@ import { recordAnswer } from "@/lib/study-tracking";
 import { usePlano, useQuestoesHoje, LIMITES_GRATIS, brtDiaKey } from "@/lib/plano";
 import { AvisoLimitePlano } from "@/components/aluno/UpsellPlano";
 import { usePageHeader } from "@/components/aluno/AlunoPageHeaderContext";
+import { registrarErro } from "@/lib/telemetria";
 import { ChevronLeft, ChevronRight, CheckCircle2, XCircle, AlertCircle, Flag } from "lucide-react";
 import { SkeletonCard } from "@/components/ui/skeleton";
 
@@ -366,6 +367,14 @@ export default function QuizClient({ sessionId }: { sessionId: string }) {
   const [err, setErr] = useState("");
   const [session, setSession] = useState<SessionDoc | null>(null);
 
+  // Carregamento que não termina não lança erro: registra se passar de 20 s
+  // (era impossível distinguir "travou" de "desistiu" nos simulados vazios).
+  useEffect(() => {
+    if (!loading) return;
+    const t = window.setTimeout(() => registrarErro("simulado-lento", "carregando há mais de 20 s", { sessionId }), 20_000);
+    return () => window.clearTimeout(t);
+  }, [loading, sessionId]);
+
   const [questions, setQuestions] = useState<QuestionDoc[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
 
@@ -602,6 +611,7 @@ export default function QuizClient({ sessionId }: { sessionId: string }) {
 
     } catch (error: unknown) {
       console.error(error);
+      registrarErro("simulado-carregar", error, { sessionId });
       setErr(getErrorMessage(error, "Falha ao carregar simulado."));
     } finally {
       setLoading(false);
@@ -777,6 +787,7 @@ export default function QuizClient({ sessionId }: { sessionId: string }) {
       if (plano.gratuito && (e as { code?: string })?.code === "permission-denied") {
         setLimiteForcado(true);
       } else {
+        registrarErro("simulado-responder", e, { sessionId, questao: currentQuestion?.id ?? null });
         setErr("Não foi possível confirmar sua resposta.");
       }
     } finally {
@@ -827,6 +838,7 @@ export default function QuizClient({ sessionId }: { sessionId: string }) {
       router.push(`/aluno/simulados/${sessionId}/resultado`);
     } catch (e) {
       console.error(e);
+      registrarErro("simulado-finalizar", e, { sessionId });
       setErr("Não foi possível finalizar o simulado.");
     } finally {
       setIsFinishing(false);
