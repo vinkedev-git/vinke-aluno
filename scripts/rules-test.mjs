@@ -14,7 +14,7 @@ import {
 const require = createRequire(import.meta.url);
 const admin = require("firebase-admin");
 
-const SA = "/Users/davidrangel/Projetos/EnemQuest/.secrets/vinke-74695-firebase-adminsdk-fbsvc-374e2db752.json";
+const SA = decodeURIComponent(new URL("../../.secrets/vinke-74695-firebase-adminsdk-fbsvc-374e2db752.json", import.meta.url).pathname);
 admin.initializeApp({ credential: admin.credential.cert(require(SA)) });
 const adb = admin.firestore();
 
